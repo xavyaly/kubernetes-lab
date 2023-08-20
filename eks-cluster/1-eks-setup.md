@@ -781,7 +781,7 @@ Use putty
 
 ---------------------------------------------------------------------------------------------------------------------
 
-### Execute few commands
+### Executed few commands to check the EKS SetUp properly
 
 $ kubectl get nodes 
 NAME                             STATUS   ROLES    AGE   VERSION
@@ -868,7 +868,7 @@ No resources found in default namespace.
 
 ---------------------------------------------------------------------------------------------------------------------
 
-### Important ####
+### First Scenario to test the EKS SetUp
 
 # A small scenario to test the eks new setup with example
 
@@ -999,7 +999,7 @@ This scenario tests basic deployment, scaling, and access to pods in your Amazon
 
 ---------------------------------------------------------------------------------------------------------------------
 
-### Another scenario to test the EKS SetUp
+### Second cenario to test the EKS SetUp
 
 Of course! Let's explore another scenario to further test your Amazon EKS setup. In this scenario, we'll deploy a stateful application using a WordPress and MySQL stack.
 
@@ -1185,6 +1185,86 @@ This scenario tests deploying a stateful application (WordPress) that relies on 
 
 
 ---------------------------------------------------------------------------------------------------------------------
+
+# Remove the complete EKS SetUp:
+
+To completely remove an Amazon EKS cluster that you've created, you need to perform a few steps to ensure all associated resources are deleted. Here's how you can do it using the AWS CLI:
+
+1. **Delete Node Groups**:
+   Before deleting the EKS cluster, you should delete any associated node groups. Replace `<cluster-name>` with your actual cluster name:
+
+   ```bash
+   eksctl delete nodegroup --cluster <cluster-name> --name <node-group-name>
+
+   ```2 mins```
+    $ eksctl delete nodegroup --cluster myeks --name myeks-ng-public1 
+    2023-08-20 18:58:16 [ℹ]  1 nodegroup (myeks-ng-public1) was included (based on the include/exclude rules)
+    2023-08-20 18:58:16 [ℹ]  will drain 1 nodegroup(s) in cluster "myeks"
+    2023-08-20 18:58:16 [ℹ]  starting parallel draining, max in-flight of 1
+    2023-08-20 18:58:19 [ℹ]  cordon node "ip-192-168-0-203.ec2.internal"
+    2023-08-20 18:58:20 [ℹ]  cordon node "ip-192-168-49-252.ec2.internal"
+    2023-08-20 18:58:20 [ℹ]  cordon node "ip-192-168-54-229.ec2.internal"
+    2023-08-20 18:58:35 [✔]  drained all nodes: [ip-192-168-54-229.ec2.internal ip-192-168-49-252.ec2.internal ip-192-168-0-203.ec2.internal]
+    2023-08-20 18:58:35 [ℹ]  will delete 1 nodegroups from cluster "myeks"
+    2023-08-20 18:58:36 [ℹ]  1 task: { 1 task: { delete nodegroup "myeks-ng-public1" [async] } }
+    2023-08-20 18:58:37 [ℹ]  will delete stack "eksctl-myeks-nodegroup-myeks-ng-public1"
+    2023-08-20 18:58:37 [ℹ]  will delete 0 nodegroups from auth ConfigMap in cluster "myeks"
+    2023-08-20 18:58:37 [✔]  deleted 1 nodegroup(s) from cluster "myeks"
+   ```
+
+   If you used eksctl to create the node group, you need to delete each node group individually.
+
+2. **Delete the Cluster**:
+   Once all node groups are deleted, you can delete the EKS cluster itself:
+
+   ```bash
+   eksctl delete cluster --name <cluster-name>
+
+    ```10-15 mins```
+    $ eksctl delete cluster --name myeks
+    2023-08-20 18:59:51 [ℹ]  deleting EKS cluster "myeks"
+    2023-08-20 18:59:53 [ℹ]  will drain 0 unmanaged nodegroup(s) in cluster "myeks"
+    2023-08-20 18:59:53 [ℹ]  starting parallel draining, max in-flight of 1
+    2023-08-20 18:59:55 [ℹ]  deleted 0 Fargate profile(s)
+    2023-08-20 18:59:59 [✔]  kubeconfig has been updated
+    2023-08-20 18:59:59 [ℹ]  cleaning up AWS load balancers created by Kubernetes objects of Kind Service or Ingress
+    2023-08-20 19:00:04 [ℹ]  
+    3 sequential tasks: { delete nodegroup "myeks-ng-public1", delete IAM OIDC provider, delete cluster control plane "myeks" [async] 
+    }
+    2023-08-20 19:00:04 [ℹ]  will delete stack "eksctl-myeks-nodegroup-myeks-ng-public1"
+    2023-08-20 19:00:04 [ℹ]  waiting for stack "eksctl-myeks-nodegroup-myeks-ng-public1" to get deleted
+    2023-08-20 19:00:05 [ℹ]  waiting for CloudFormation stack "eksctl-myeks-nodegroup-myeks-ng-public1"
+    2023-08-20 19:00:36 [ℹ]  waiting for CloudFormation stack "eksctl-myeks-nodegroup-myeks-ng-public1"
+    2023-08-20 19:01:30 [ℹ]  waiting for CloudFormation stack "eksctl-myeks-nodegroup-myeks-ng-public1"
+    2023-08-20 19:01:32 [ℹ]  will delete stack "eksctl-myeks-cluster"
+    2023-08-20 19:01:33 [✔]  all cluster resources were deleted
+   ```
+
+3. **Verify Deletion**:
+   After initiating the deletion, you might want to check the status of the cluster deletion:
+
+   ```bash
+   eksctl get cluster --name <cluster-name>
+
+   $ eksctl get cluster --name myeks
+    Error: unable to describe control plane "myeks": operation error EKS: DescribeCluster, https response error StatusCode: 404, RequestID: ee78a5d1-8845-4ce1-a01c-3e7fc7f317e6, ResourceNotFoundException: No cluster found for name: myeks.
+   ```
+
+   If the cluster is being deleted, you will see that the `STATUS` field is set to `DELETING`.
+
+4. **Clean Up IAM Roles**:
+   If you used `eksctl`, it will attempt to clean up IAM roles created for the cluster automatically. However, it's a good practice to double-check and ensure that there are no leftover IAM roles that are no longer needed.
+
+Remember to replace `<cluster-name>` with the actual name of your EKS cluster, and `<node-group-name>` with the name of the node group you created (if any).
+
+Please be cautious while performing these actions, as they will irreversibly delete your EKS cluster and associated resources. Make sure you have backups or snapshots of any critical data before proceeding.
+
+---------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 
 

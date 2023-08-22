@@ -1,0 +1,1 @@
+[Architecture](https://jeewansooriyaarachchi.medium.com/what-does-kubernetes-eks-production-cluster-look-like-efb82d145c36)

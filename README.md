@@ -95,6 +95,15 @@ kustomizeVersion: v4.5.7
 
 # Install minikube if not present, to talk to cluster
 
+# What you’ll need 
+```
+2 CPUs or more
+2GB of free memory
+20GB of free disk space
+Internet connection
+Container or virtual machine manager, such as: Docker, QEMU, Hyperkit, Hyper-V, KVM, Parallels, Podman, VirtualBox, or VMware Fusion/Workstation
+```
+
 # how to install [Install minikube](https://minikube.sigs.k8s.io/docs/start/)
 
 # Binary

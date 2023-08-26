@@ -1133,17 +1133,537 @@ nginx-replicaset-xbql2   1/1     Running   0          2m5s   10.244.0.5   local-
 
 # Rollout and Rollback
 
+# PODs: Smallest unit in K8s
 
+# When we create a Deployment, replicaset automatically created
+
+$ kubectl api-resources | grep deployment
+```
+$ kubectl api-resources | grep deployment
+deployments                       deploy       apps/v1                                true         Deployment
+```
+
+$ cat nginx-deployment.yaml     --> same as replicaset format
+```
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels: 
+      app: nginx 
+  template:
+    metadata:
+      name: nginx-pod
+      labels:
+        app: nginx 
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+          - containerPort: 80
+```
+
+# remove all before creating the deployment
+
+```
+$ kubectl get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE   IP           NODE                NOMINATED NODE   READINESS GATES
+nginx-replicaset-6pq6z   1/1     Running   0          22m   10.244.2.2   local-cluster-m03   <none>           <none>
+nginx-replicaset-l6lf8   1/1     Running   0          20m   10.244.2.3   local-cluster-m03   <none>           <none>
+nginx-replicaset-xbql2   1/1     Running   0          22m   10.244.0.5   local-cluster       <none>           <none>
+
+$ kubectl get nodes -o wide
+NAME                STATUS   ROLES           AGE     VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+local-cluster       Ready    control-plane   4h19m   v1.26.3   192.168.58.2   <none>        Ubuntu 20.04.5 LTS   5.15.49-linuxkit   docker://23.0.2
+local-cluster-m03   Ready    <none>          23m     v1.26.3   192.168.58.4   <none>        Ubuntu 20.04.5 LTS   5.15.49-linuxkit   docker://23.0.2
+
+$ kubectl get rs -o wide
+NAME               DESIRED   CURRENT   READY   AGE   CONTAINERS        IMAGES         SELECTOR
+nginx-replicaset   3         3         3       22m   nginx-container   nginx:latest   app=nginx
+
+$ kubectl get svc
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   4h20m
+
+$ kubectl get ns
+NAME                   STATUS   AGE
+default                Active   4h20m
+kube-node-lease        Active   4h20m
+kube-public            Active   4h20m
+kube-system            Active   4h20m
+kubernetes-dashboard   Active   3h56m
+
+$ kubectl get deployment
+No resources found in default namespace.
+```
+
+# Delete all resources 
+
+```
+$ kubectl delete all --all
+pod "nginx-replicaset-6pq6z" deleted
+pod "nginx-replicaset-l6lf8" deleted
+pod "nginx-replicaset-xbql2" deleted
+service "kubernetes" deleted
+replicaset.apps "nginx-replicaset" deleted
+
+
+$ kubectl get pods -o wide
+No resources found in default namespace.
+$ kubectl get nodes -o wide
+NAME                STATUS   ROLES           AGE     VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+local-cluster       Ready    control-plane   4h22m   v1.26.3   192.168.58.2   <none>        Ubuntu 20.04.5 LTS   5.15.49-linuxkit   docker://23.0.2
+local-cluster-m03   Ready    <none>          26m     v1.26.3   192.168.58.4   <none>        Ubuntu 20.04.5 LTS   5.15.49-linuxkit   docker://23.0.2
+
+$ kubectl get rs -o wide
+No resources found in default namespace.
+
+$ kubectl get svc -o wide
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   49s   <none>
+
+$ kubectl get deployment -o wide
+No resources found in default namespace.
+
+$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   2m30s
+```
+
+# Create a deployment
+
+$ kubectl create -f nginx-deployment.yaml 
+```
+$ kubectl create -f nginx-deployment.yaml 
+deployment.apps/nginx-deployment created
+```
+
+# List all the resources created
+```
+$ kubectl get all
+NAME                                    READY   STATUS              RESTARTS   AGE
+pod/nginx-deployment-654b769bc9-9mkz8   0/1     ContainerCreating   0          4s
+pod/nginx-deployment-654b769bc9-cxk8k   0/1     ContainerCreating   0          4s
+pod/nginx-deployment-654b769bc9-gqhmm   0/1     ContainerCreating   0          4s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   3m48s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   0/3     3            0           4s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-654b769bc9   3         3         0       4s
+```
+
+# After some time 
+
+```
+$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-654b769bc9-9mkz8   1/1     Running   0          119s
+pod/nginx-deployment-654b769bc9-cxk8k   1/1     Running   0          119s
+pod/nginx-deployment-654b769bc9-gqhmm   1/1     Running   0          119s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   5m43s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   3/3     3            3           119s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-654b769bc9   3         3         3       119s
+```
+
+$ kubectl get po --show-labels -o wide
+```
+$ kubectl get po --show-labels -o wide
+NAME                                READY   STATUS    RESTARTS   AGE     IP           NODE                NOMINATED NODE   READINESS GATES   LABELS
+nginx-deployment-654b769bc9-9mkz8   1/1     Running   0          3m35s   10.244.2.6   local-cluster-m03   <none>           <none>            app=nginx,pod-template-hash=654b769bc9
+nginx-deployment-654b769bc9-cxk8k   1/1     Running   0          3m35s   10.244.2.7   local-cluster-m03   <none>           <none>            app=nginx,pod-template-hash=654b769bc9
+nginx-deployment-654b769bc9-gqhmm   1/1     Running   0          3m35s   10.244.0.7   local-cluster       <none>           <none>            app=nginx,pod-template-hash=654b769bc9
+```
+
+
+# Increase/Decrease the replicas
+
+$ cat nginx-deployment.yaml     --> same as replicaset format
+```
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels: 
+      app: nginx 
+  template:
+    metadata:
+      name: nginx-pod
+      labels:
+        app: nginx 
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+          - containerPort: 80
+```
+
+$ kubectl apply -f nginx-deployment.yaml 
+```
+$ kubectl apply -f nginx-deployment.yaml 
+Warning: resource deployments/nginx-deployment is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+deployment.apps/nginx-deployment configured
+```
+
+$ kubectl get all  --> decrease as per deployment.yaml file gr8
+```
+$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-654b769bc9-9mkz8   1/1     Running   0          8m34s
+pod/nginx-deployment-654b769bc9-gqhmm   1/1     Running   0          8m34s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   12m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           8m35s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-654b769bc9   2         2         2       8m35s
+```
+
+# Increase the replicas via runtime
+
+$ kubectl scale --replicas=4 deployment/nginx-deployment
+```
+$ kubectl scale --replicas=4 deployment/nginx-deployment
+deployment.apps/nginx-deployment scaled
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-654b769bc9-5w5xl   1/1     Running   0          5s
+pod/nginx-deployment-654b769bc9-9mkz8   1/1     Running   0          10m
+pod/nginx-deployment-654b769bc9-crfbm   1/1     Running   0          5s
+pod/nginx-deployment-654b769bc9-gqhmm   1/1     Running   0          10m
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   14m       --> default
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   4/4     4            4           10m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-654b769bc9   4         4         4       10m
+```
+
+
+# How ROLLBACK OR ROLLOUT Works in K8s 
+
+# ROLLOUT 
+
+$ cat nginx-deployment.yaml
+```
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels: 
+      app: nginx 
+  template:
+    metadata:
+      name: nginx-pod
+      labels:
+        app: nginx 
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.21.3
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+          - containerPort: 80
+```
+
+$ kubectl apply -f nginx-deployment.yaml 
+```
+$ kubectl apply -f nginx-deployment.yaml 
+deployment.apps/nginx-deployment configured
+```
+
+# A rs: "replicaset.apps/nginx-deployment-5d574fdbbf" 
+# will be created whenever rollout occurs; old rs not deleted; stored 10 rs in k8s helps in rollback
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                    READY   STATUS              RESTARTS   AGE
+pod/nginx-deployment-5d574fdbbf-zg578   0/1     ContainerCreating   0          2s
+pod/nginx-deployment-654b769bc9-9mkz8   1/1     Running             0          14m
+pod/nginx-deployment-654b769bc9-gqhmm   1/1     Running             0          14m
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   17m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     1            2           14m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-5d574fdbbf   1         1         0       2s
+replicaset.apps/nginx-deployment-654b769bc9   2         2         2       14m
+
+
+# after some moment
+
+$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-5d574fdbbf-wn5nb   1/1     Running   0          2m38s
+pod/nginx-deployment-5d574fdbbf-zg578   1/1     Running   0          2m53s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   20m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           17m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-5d574fdbbf   2         2         2       2m53s
+replicaset.apps/nginx-deployment-654b769bc9   0         0         0       17m
+```
+
+# ROLLBACK
+
+$ kubectl set image deployment/nginx-deployment nginx-container=nginx:1.21
+```
+$ kubectl set image deployment/nginx-deployment nginx-container=nginx:1.21
+deployment.apps/nginx-deployment image updated
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                    READY   STATUS              RESTARTS   AGE
+pod/nginx-deployment-5d574fdbbf-wn5nb   1/1     Running             0          5m18s
+pod/nginx-deployment-5d574fdbbf-zg578   1/1     Running             0          5m33s
+pod/nginx-deployment-6d77cc77db-d4hpq   0/1     ContainerCreating   0          8s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   23m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     1            2           19m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-5d574fdbbf   2         2         2       5m33s
+replicaset.apps/nginx-deployment-654b769bc9   0         0         0       19m
+replicaset.apps/nginx-deployment-6d77cc77db   1         1         0       8s
+```
+
+# After few secs
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-6d77cc77db-d4hpq   1/1     Running   0          48s
+pod/nginx-deployment-6d77cc77db-wkpg9   1/1     Running   0          31s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   24m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           20m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-5d574fdbbf   0         0         0       6m13s
+replicaset.apps/nginx-deployment-654b769bc9   0         0         0       20m
+replicaset.apps/nginx-deployment-6d77cc77db   2         2         2       48s
+```
+
+# Cross verification the image
+
+$ kubectl describe pod/nginx-deployment-6d77cc77db-d4hpq | grep "image"
+```
+$ kubectl describe pod/nginx-deployment-6d77cc77db-d4hpq | grep "image"
+  Normal  Pulling    119s  kubelet            Pulling image "nginx:1.21"
+  Normal  Pulled     104s  kubelet            Successfully pulled image "nginx:1.21" in 15.220363465s (15.220697424s including waiting)
+```
+
+
+# HISTORY
+
+$ kubectl rollout history deployment/nginx-deployment
+```
+$ kubectl rollout history deployment/nginx-deployment
+deployment.apps/nginx-deployment 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+3         <none>
+```
+
+$ kubectl set image deployment/nginx-deployment nginx-container:1.20 --record
+```
+$ kubectl set image deployment/nginx-deployment nginx-container:1.20 --record
+Flag --record has been deprecated, --record will be removed in the future
+error: there is no need to specify a resource type as a separate argument when passing arguments in resource/name form (e.g. 'kubectl get resource/<resource_name>' instead of 'kubectl get resource resource/<resource_name>'
+```
+
+$ kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record
+```
+$ kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record
+Flag --record has been deprecated, --record will be removed in the future
+deployment.apps/nginx-deployment image updated
+```
+
+$ kubectl rollout history deployment/nginx-deployment
+```
+$ kubectl rollout history deployment/nginx-deployment
+deployment.apps/nginx-deployment 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+3         <none>
+4         kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record=true
+```
+
+$ cat nginx-deployment.yaml
+```
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: nginx-deployment
+  annotations:
+    kubernetes.io/change-cause: "Updating to alpine version"
+spec:
+  replicas: 2
+  selector:
+    matchLabels: 
+      app: nginx 
+  template:
+    metadata:
+      name: nginx-pod
+      labels:
+        app: nginx 
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.21.3
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+          - containerPort: 80
+```
+
+$ kubectl apply -f nginx-deployment.yaml 
+```
+$ kubectl apply -f nginx-deployment.yaml 
+deployment.apps/nginx-deployment configured
+```
+
+$ kubectl rollout history deployment/nginx-deployment
+```
+$ kubectl rollout history deployment/nginx-deployment
+deployment.apps/nginx-deployment 
+REVISION  CHANGE-CAUSE
+1         <none>
+3         <none>
+4         kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record=true
+5         Updating to alpine version
+```
+
+# This is like Rollout works 
+
+$ kubectl rollout history deployment/nginx-deployment
+```
+$ kubectl rollout history deployment/nginx-deployment
+deployment.apps/nginx-deployment 
+REVISION  CHANGE-CAUSE
+1         <none>
+3         <none>
+4         kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record=true
+5         Updating to alpine version
+```
+
+$ kubectl rollout undo deployment/nginx-deployment --to-revision=1
+```
+$ kubectl rollout undo deployment/nginx-deployment --to-revision=1
+deployment.apps/nginx-deployment rolled back
+```
+
+$ kubectl rollout history deployment/nginx-deployment
+```
+$ kubectl rollout history deployment/nginx-deployment
+deployment.apps/nginx-deployment 
+REVISION  CHANGE-CAUSE
+3         <none>
+4         kubectl set image deployment/nginx-deployment nginx-container=nginx:1.20 --record=true
+5         Updating to alpine version
+6         <none>
+```
+
+# Check the status for roll out 
+
+$ kubectl rollout status deployment/nginx-deployment
+```
+$ kubectl rollout status deployment/nginx-deployment
+deployment "nginx-deployment" successfully rolled out
+```
+
+$ kubectl get all 
+```
+$ kubectl get all 
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-654b769bc9-5xhg7   1/1     Running   0          3m8s
+pod/nginx-deployment-654b769bc9-b99pp   1/1     Running   0          3m12s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   41m
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           37m
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-5d574fdbbf   0         0         0       23m
+replicaset.apps/nginx-deployment-654b769bc9   2         2         2       37m
+replicaset.apps/nginx-deployment-6b8dbb4d65   0         0         0       10m
+replicaset.apps/nginx-deployment-6d77cc77db   0         0         0       17m
+```
+
+# Cross check the images --> suppose to be latest one 
+$ kubectl describe pod nginx-deployment-654b769bc9-5xhg7 | grep image
+```
+$ kubectl describe pod nginx-deployment-654b769bc9-5xhg7 | grep image
+  Normal  Pulling    4m19s  kubelet            Pulling image "nginx:latest"
+  Normal  Pulled     4m17s  kubelet            Successfully pulled image "nginx:latest" in 2.258209876s (2.258253293s including waiting)
+```
 ---------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------
+
+# Services | ClusterIP vs NodePort vs LoadBalancer Service | Load Balancing Hands-on
+
+[Services](https://www.youtube.com/watch?v=zCW1TewkoOk&list=PLrMP04WSdCjrkNYSFvFeiHrfpsSVDFMDR&index=7)
 

@@ -55,6 +55,8 @@ Azure AKS ??
 
 ---------------------------------------------------------------------------------------------
 
+[Link](https://www.youtube.com/watch?v=dSOS-7SZ_BA&list=PLrMP04WSdCjrkNYSFvFeiHrfpsSVDFMDR&index=3)
+
 # Install kubectl: https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/
 
 # Execute the below binary commands to install kubectl

@@ -2490,6 +2490,8 @@ $ minikube service nginx-service -p local-cluster
 # Load balancer service
 
 $ cat nginx-service.yaml
+```
+$ cat nginx-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -2502,7 +2504,7 @@ spec:
   - port: 8082
     targetPort: 80
     nodePort: 30000
-
+```
 
 $ kubectl apply -f nginx-service.yaml 
 ```
@@ -2541,7 +2543,212 @@ $ minikube service nginx-service -p local-cluster
 
 ---------------------------------------------------------------------------------------------
 
+# Kubernetes Ingress
+
+[Ingress](https://www.youtube.com/watch?v=YFnzVaZsKK8&list=PLrMP04WSdCjrkNYSFvFeiHrfpsSVDFMDR&index=8)
+
+# Ingress(https) -> Ingress Controller
+
+# Single LB to access the application with the help of "/"
+
+# Ingress only support to Linux OS
+
+$ minikube start --vm=true -p ingress-cluster
+```
+$ minikube start --vm=true -p ingress-cluster
+😄  [ingress-cluster] minikube v1.30.1 on Darwin 13.4 (arm64)
+👎  Unable to pick a default driver. Here is what was considered, in preference order:
+💡  Alternatively you could install one of these drivers:
+    ▪ hyperkit: Not installed: exec: "hyperkit": executable file not found in $PATH
+    ▪ qemu2: Not installed: exec: "qemu-system-aarch64": executable file not found in $PATH
+    ▪ parallels: Not installed: exec: "prlctl": executable file not found in $PATH
+    ▪ virtualbox: Not installed: unable to find VBoxManage in $PATH
+
+❌  Exiting due to DRV_NOT_DETECTED: No possible driver was detected. Try specifying --driver, or see https://minikube.sigs.k8s.io/docs/start/
+```
+
+# Resolution: chatGPT
+
+```
+The error message you're encountering indicates that Minikube is unable to detect a default driver for creating and managing the virtual machine (VM) that runs the Kubernetes cluster. This is why it's asking you to specify a driver explicitly.
+
+To fix this issue, you have a few options:
+
+1. **Install a Supported Driver**:
+   Minikube supports various virtualization drivers such as `hyperkit`, `qemu`, `parallels`, and `virtualbox`. Depending on your system and preferences, you can install one of these drivers. The error message indicates that the required executables for these drivers are not found in your `$PATH`.
+
+2. **Specify a Driver with `--driver` Flag**:
+   You can specify a driver using the `--driver` flag when starting Minikube. For example, if you have VirtualBox installed, you can start Minikube with:
+
+   ```bash
+   minikube start --vm=true -p ingress-cluster --driver=virtualbox
+   ```
+
+   Replace `virtualbox` with the driver of your choice if you have it installed.
+
+3. **Install Hyperkit, QEMU, or Parallels**:
+   If you want to use `hyperkit`, `qemu`, or `parallels` as the driver, you'll need to install the corresponding software first. These drivers provide better performance compared to `virtualbox` on macOS.
+
+   For `hyperkit` (recommended for macOS):
+   ```bash
+   brew install hyperkit
+   ```
+
+   For `qemu` (general-purpose):
+   ```bash
+   brew install qemu
+   ```
+
+   For `parallels` (if you have Parallels Desktop):
+   ```bash
+   brew install --cask parallels
+   ```
+
+Remember to choose the driver that best suits your needs and system compatibility. Once you have a driver installed, you should be able to start Minikube without encountering the "DRV_NOT_DETECTED" error.
+```
+
+$ brew --version
+```
+$ brew --version
+Homebrew 4.1.6
+```
+
+# Install a driver
+
+$ brew install hyperkit
+```
+$ brew install hyperkit
+Running `brew update --auto-update`...
+==> Auto-updated Homebrew!
+Updated 1 tap (homebrew/core).
+==> New Formulae
+bazel-diff  cdxgen      codelimit   counts      goread      hyfetch     imgdiet     imgdiff     kor         risor       roadrunner  toxiproxy
+
+You have 8 outdated formulae and 1 outdated cask installed.
+
+hyperkit: A full installation of Xcode.app 9.0 is required to compile
+this software. Installing just the Command Line Tools is not sufficient.
+
+Xcode can be installed from the App Store.
+hyperkit: The x86_64 architecture is required for this software.
+Error: hyperkit: Unsatisfied requirements failed this build.
+```
+
+# Install another driver
+```
+$ brew install qemu     # 10 mins 
+
+$ qemu-system-x86_64 --version
+QEMU emulator version 8.1.0
+Copyright (c) 2003-2023 Fabrice Bellard and the QEMU Project developers
+```
 
 
+# Create cluster with minikube with "qemu2 driver"
 
+$ minikube start --vm=true -p ingress-cluster
+```
+$ minikube start --vm=true -p ingress-cluster
+😄  [ingress-cluster] minikube v1.30.1 on Darwin 13.4 (arm64)
+✨  Automatically selected the qemu2 driver
+🌐  Automatically selected the builtin network
+❗  You are using the QEMU driver without a dedicated network, which doesn't support `minikube service` & `minikube tunnel` commands.
+To try the dedicated network see: https://minikube.sigs.k8s.io/docs/drivers/qemu/#networking
+💿  Downloading VM boot image ...
+    > minikube-v1.30.1-arm64.iso....:  65 B / 65 B [---------] 100.00% ? p/s 0s
+    > minikube-v1.30.1-arm64.iso:  330.67 MiB / 330.67 MiB  100.00% 8.69 MiB p/
+👍  Starting control plane node ingress-cluster in cluster ingress-cluster
+🔥  Creating qemu2 VM (CPUs=2, Memory=2200MB, Disk=20000MB) ...
+🐳  Preparing Kubernetes v1.26.3 on Docker 20.10.23 ...
+    ▪ Generating certificates and keys ...
+    ▪ Booting up control plane ...
+    ▪ Configuring RBAC rules ...
+🔗  Configuring bridge CNI (Container Networking Interface) ...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🔎  Verifying Kubernetes components...
+🌟  Enabled addons: storage-provisioner, default-storageclass
+🏄  Done! kubectl is now configured to use "ingress-cluster" cluster and "default" namespace by default
+```
+
+# List cluster details
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   11s
+
+
+# Perform the deployment and cross check 
+
+```
+$ kubectl apply -f nginx-deployment.yaml 
+deployment.apps/nginx-deployment created
+$ kubectl apply -f nginx-service.yaml 
+service/nginx-service created
+$ kubectl get all
+NAME                                   READY   STATUS              RESTARTS   AGE
+pod/nginx-deployment-fdcbb5f99-dd9x2   0/1     ContainerCreating   0          13s
+pod/nginx-deployment-fdcbb5f99-rmqrs   0/1     ContainerCreating   0          13s
+
+NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+service/kubernetes      ClusterIP      10.96.0.1       <none>        443/TCP          3m16s
+service/nginx-service   LoadBalancer   10.109.172.10   <pending>     8082:30000/TCP   5s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   0/2     2            0           13s
+
+NAME                                         DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-fdcbb5f99   2         2         0       13s
+```
+
+# Ingrees Controllers
+```
+HAProxy
+traefik
+Istio
+```
+
+# Enable Ingress with a single command
+
+$ minikube addons enable ingress -p ingress-cluster
+```
+$ minikube addons enable ingress -p ingress-cluster
+💡  ingress is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+    ▪ Using image registry.k8s.io/ingress-nginx/controller:v1.7.0
+    ▪ Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20230312-helm-chart-4.5.2-28-g66a760794
+    ▪ Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20230312-helm-chart-4.5.2-28-g66a760794
+🔎  Verifying ingress addon...
+🌟  The 'ingress' addon is enabled
+```
+
+$ kubectl get po -n ingress-nginx
+```
+$ kubectl get po -n ingress-nginx
+NAME                                        READY   STATUS      RESTARTS   AGE
+ingress-nginx-admission-create-t6mct        0/1     Completed   0          2m38s
+ingress-nginx-admission-patch-f9j2z         0/1     Completed   1          2m38s
+ingress-nginx-controller-6cc5ccb977-97bc2   1/1     Running     0          2m38s
+```
+
+# Recheck the complete cluster as usual
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                   READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-fdcbb5f99-dd9x2   1/1     Running   0          7m23s
+pod/nginx-deployment-fdcbb5f99-rmqrs   1/1     Running   0          7m23s
+
+NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+service/kubernetes      ClusterIP      10.96.0.1       <none>        443/TCP          10m
+service/nginx-service   LoadBalancer   10.109.172.10   <pending>     8082:30000/TCP   7m15s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           7m23s
+
+NAME                                         DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-fdcbb5f99   2         2         2       7m23s
+```
 

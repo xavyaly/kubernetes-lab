@@ -2547,6 +2547,21 @@ $ minikube service nginx-service -p local-cluster
 
 [Ingress](https://www.youtube.com/watch?v=YFnzVaZsKK8&list=PLrMP04WSdCjrkNYSFvFeiHrfpsSVDFMDR&index=8)
 
+# Details:
+```
+Intro
+Need for Ingress
+Ingress Controller
+Ingress in action
+Installing Nginx Ingress Controller
+First Ingress Rule - Nginx Demo
+Deploying TODO application
+Path-based Routing
+Host-based Routing
+Default Backend
+Configuring TLS Certificate
+```
+
 # Ingress(https) -> Ingress Controller
 
 # Single LB to access the application with the help of "/"
@@ -2709,7 +2724,10 @@ traefik
 Istio
 ```
 
-# Enable Ingress with a single command
+# Imp
+# nginx ingress controller supported by K8s by default
+
+# We can deploy nginx ingress controller in minikube with just a single command
 
 $ minikube addons enable ingress -p ingress-cluster
 ```
@@ -2751,4 +2769,578 @@ deployment.apps/nginx-deployment   2/2     2            2           7m23s
 NAME                                         DESIRED   CURRENT   READY   AGE
 replicaset.apps/nginx-deployment-fdcbb5f99   2         2         2       7m23s
 ```
+
+# ingress-nginx pod is running 
+
+$ kubectl get po -n ingress-nginx 
+```
+$ kubectl get po -n ingress-nginx 
+NAME                                        READY   STATUS      RESTARTS      AGE
+ingress-nginx-admission-create-t6mct        0/1     Completed   0             25d
+ingress-nginx-admission-patch-f9j2z         0/1     Completed   1             25d
+ingress-nginx-controller-6cc5ccb977-97bc2   1/1     Running     1 (17m ago)   25d
+```
+
+# NodePort svc is created for ingress-nginx-controller
+
+$ kubectl get svc -n ingress-nginx
+```
+$ kubectl get svc -n ingress-nginx
+NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller             NodePort    10.108.214.38   <none>        80:31452/TCP,443:32373/TCP   25d
+ingress-nginx-controller-admission   ClusterIP   10.105.59.201   <none>        443/TCP                      25d
+```
+
+# Load Balancer doesn't support on minikube 
+
+# Create a YAML file: "nginx-ingress.yaml"
+
+# Fetch the details of manifest 
+
+$ kubectl api-resources | grep Ingress
+```
+$ kubectl api-resources | grep Ingress
+ingressclasses                                 networking.k8s.io/v1                   false        IngressClass
+ingresses                         ing          networking.k8s.io/v1                   true         Ingress
+```
+
+# nginx-ingress.yaml
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+    - host: nginx-demo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix 
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8082
+```
+
+# Create an ingress 
+
+$ kubectl apply -f nginx-ingress.yaml 
+```
+$ kubectl apply -f nginx-ingress.yaml 
+ingress.networking.k8s.io/nginx-ingress created
+```
+
+# Verify the ingress
+
+$ kubectl get ingress
+```
+$ kubectl get ingress
+NAME            CLASS   HOSTS            ADDRESS     PORTS   AGE
+nginx-ingress   nginx   nginx-demo.com   10.0.2.15   80      2m39s
+
+$ kubectl get ing
+NAME            CLASS   HOSTS            ADDRESS     PORTS   AGE
+nginx-ingress   nginx   nginx-demo.com   10.0.2.15   80      2m42s
+```
+
+# Sometimes it takes time to assign the ADDRESS, localhost assigns by default
+# CLASS = nginx (implies it is using ingress controller)
+
+# Try to access: http://nginx-demo.com in browser -> no access
+
+# Get the minikube IP Address
+
+$ minikube ip -p ingress-cluster
+```
+$ minikube ip -p ingress-cluster
+10.0.2.15
+```
+
+$ cat /etc/hosts | tail -1
+```
+$ cat /etc/hosts | tail -1
+10.0.2.15       nginx-demo.com
+```
+
+# Now try access again: http://nginx-demo.com -> nginx web page should be accessible
+
+# In case if it is no accessible, try to check the service name etc for troubleshooting
+
+# chatgpt
+```
+The Kubernetes Ingress resource you provided appears to be mostly correct, but there's one potential issue depending on your setup. Let's break it down:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+    - host: nginx-demo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix 
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8082
+```
+
+Here's what's correct:
+
+1. You have defined an Ingress resource with the name "nginx-ingress."
+
+2. You've specified the host as "nginx-demo.com." This means that this Ingress resource will handle requests directed to "nginx-demo.com."
+
+3. You've set up a rule for HTTP traffic, and it's configured to route all requests (path "/") to a backend service named "nginx-service" on port 8082.
+
+4. The use of `pathType: Prefix` indicates that the Ingress controller should match paths that have "/abc" as a prefix, including the root path "/."
+
+However, there are some points to consider:
+
+1. Ensure that the hostname "nginx-demo.com" is correctly configured in your DNS to point to the IP address or LoadBalancer associated with your Kubernetes cluster. Without proper DNS resolution, requests won't reach your cluster.
+
+2. Verify that the service "nginx-service" with port 8082 exists in your cluster and serves the application you want to expose. The service name and port must match what you have defined in your Ingress.
+
+3. Make sure that your Ingress controller is correctly configured and running in your cluster. The Ingress controller (e.g., Nginx Ingress Controller) is responsible for handling Ingress resources and routing traffic to the appropriate backend services.
+
+4. The use of `pathType: Prefix` means that this Ingress resource will match paths that have "/abc" as a prefix, including the root path "/." If this is what you intend, it's fine. However, if you want to match only the root path "/", you can omit the `pathType` field or set it to its default value, which is "ImplementationSpecific."
+
+If you've addressed these considerations and your setup aligns with your intended configuration, then the provided Ingress resource should work as expected for routing traffic to the specified backend service.
+```
+
+# Create a file todo-ui-api.yaml
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  namespace: todo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-api
+  template:
+    metadata:
+      name: todo-api-pod
+      labels:
+        app: todo-api
+    spec:
+      containers:
+        - name: todo-api
+          image: pavanelthepu/todo-api:1.0.2
+          ports:
+            - containerPort: 8082
+          env:
+            - name: "spring.data.mongodb.uri"
+              value: "mongodb+srv://root:321654@cluster0.p9jq2.mongodb.net/todo?retryWrites=true&w=majority"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-api-service
+  namespace: todo
+spec:
+  selector:
+    app: todo-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-ui
+  namespace: todo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-ui
+  template:
+    metadata:
+      name: todo-ui-pod
+      labels:
+        app: todo-ui
+    spec:
+      containers:
+        - name: todo-ui
+          image: pavanelthepu/todo-ui:1.0.2
+          ports:
+            - containerPort: 80
+          env:
+            - name: "REACT_APP_BACKEND_SERVER_URL"
+              value: "http://todo.com/api"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-ui-service
+  namespace: todo
+spec:
+  selector:
+    app: todo-ui
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 80
+```
+
+# Create todo ui and api deployment and svc 
+
+$ kubectl apply -f todo-ui-api.yaml 
+```
+$ kubectl apply -f todo-ui-api.yaml 
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+```
+
+$ kubectl create -f todo-ui-api.yaml 
+```
+$ kubectl create -f todo-ui-api.yaml 
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+Error from server (NotFound): error when creating "todo-ui-api.yaml": namespaces "todo" not found
+```
+
+$ kubectl create ns todo
+```
+$ kubectl create ns todo
+namespace/todo created
+```
+
+$ kubectl get ns
+```
+$ kubectl get ns
+NAME                   STATUS   AGE
+cert-manager           Active   29d
+default                Active   29d
+kube-node-lease        Active   29d
+kube-public            Active   29d
+kube-system            Active   29d
+kubernetes-dashboard   Active   29d
+todo                   Active   9s
+```
+
+$ kubectl apply -f todo-ui-api.yaml 
+```
+$ kubectl apply -f todo-ui-api.yaml 
+deployment.apps/todo-api created
+service/todo-api-service created
+deployment.apps/todo-ui created
+service/todo-ui-service created
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                         READY   STATUS    RESTARTS      AGE
+pod/nginx-replicaset-6g6cc   1/1     Running   3 (12m ago)   26d
+pod/nginx-replicaset-gbkgn   1/1     Running   3 (12m ago)   26d
+pod/nginx-replicaset-hmxt2   1/1     Running   3 (12m ago)   26d
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   29d
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-replicaset   3         3         3       26d
+```
+
+# PATH BASED 
+
+# Create another file: todo-ingress-path-based.yaml
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-ingress-path-based
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    - host: todo.com
+      http:
+        paths:
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-ui-service
+                port:
+                  number: 3001
+          - path: /api/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-api-service
+                port:
+                  number: 8080
+```
+
+# Create ingress path based 
+
+$ kubectl apply -f todo-ingress-path-based.yaml 
+```
+$ kubectl apply -f todo-ingress-path-based.yaml 
+ingress.networking.k8s.io/todo-ingress-path-based created
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                         READY   STATUS    RESTARTS      AGE
+pod/nginx-replicaset-6g6cc   1/1     Running   3 (21m ago)   26d
+pod/nginx-replicaset-gbkgn   1/1     Running   3 (21m ago)   26d
+pod/nginx-replicaset-hmxt2   1/1     Running   3 (21m ago)   26d
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   29d
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-replicaset   3         3         3       26d
+```
+
+$ kubectl get ing
+```
+$ kubectl get ing
+NAME                      CLASS    HOSTS      ADDRESS   PORTS   AGE
+todo-ingress-path-based   <none>   todo.com             80      2m19s
+```
+
+$ cat /etc/hosts | tail -1
+```
+$ sudo vim /etc/hosts 
+$ cat /etc/hosts | tail -1
+10.0.2.15       todo.com
+```
+
+# Try to access: "http://todo.com" in browser 
+
+# Try to access: "http://todo.com/api/api/todos" -> JSON data as output from DB
+
+END for path based routing 
+
+
+# HOST BASED 
+
+# Create a yaml file: todo-ingress-host-based.yaml
+
+$ vim todo-ingress-host-based.yaml
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-ingress-host-based
+spec:
+  rules:
+    - host: todo-ui.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-ui-service
+                port:
+                  number: 3001
+    - host: todo-api.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-api-service
+                port:
+                  number: 8080
+```
+
+$ kubectl apply -f todo-ingress-host-based.yaml 
+```
+$ kubectl apply -f todo-ingress-host-based.yaml 
+ingress.networking.k8s.io/todo-ingress-host-based created
+```
+
+$ kubectl get ing
+```
+$ kubectl get ing
+NAME                      CLASS    HOSTS                      ADDRESS   PORTS   AGE
+todo-ingress-host-based   <none>   todo-ui.com,todo-api.com             80      5s
+todo-ingress-path-based   <none>   todo.com                             80      12m
+```
+
+$ cat /etc/hosts | tail -2
+```
+$ cat /etc/hosts | tail -2
+10.0.2.15       todo-ui.com
+10.0.2.15       todo-api.com
+```
+
+# make sure all were having the same LB IP: 10.0.2.15 
+
+# Try to access: "http://todo-ui.com" in browser 
+
+# Try to access: "http://todo-api.com/api/todos" in browser -> JSON from DB 
+
+# HOST BASED ROUTING END 
+
+
+# Find the default path 
+
+$ kubectl describe ing nginx-ingress 
+```
+$ kubectl describe ing nginx-ingress 
+Error from server (NotFound): ingresses.networking.k8s.io "nginx-ingress" not found
+```
+
+$ kubectl apply -f nginx-ingress.yaml 
+```
+$ kubectl apply -f nginx-ingress.yaml 
+ingress.networking.k8s.io/nginx-ingress created
+```
+
+$ kubectl describe ing nginx-ingress 
+```
+$ kubectl describe ing nginx-ingress 
+Name:             nginx-ingress
+Labels:           <none>
+Namespace:        default
+Address:          
+Ingress Class:    <none>
+Default backend:  <default>
+Rules:
+  Host            Path  Backends
+  ----            ----  --------
+  nginx-demo.com  
+                  /   nginx-service:8082 (<error: endpoints "nginx-service" not found>)
+Annotations:      <none>
+Events:           <none>
+```
+
+# Imp
+# Default backend:  <default>
+# Here you can also configure so that default can route the traffic to specific path 
+
+
+# SSL 
+
+# How can we secure our ingress resource with the help of SSL 
+
+# Create a self signed certificate with key 
+
+$ openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=nginx-demo.com" -days 365
+```
+$ openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=nginx-demo.com" -days 365
+......+.....+.........+......+...+.+..+....+...+..+...+......+.......+..+......+.+...+..+.+..................+.....+.....................+.+...+.........+..+...+...+....+........+.+..+.......+...+...+..+++++++++++++++++++++++++++++++++++++++++++++*.......+......+......+........+.+........+...+....+...+.....+++++++++++++++++++++++++++++++++++++++++++++*....+..+....+.....+.......+..+............+.+.....+....+......+...+...........+..........+...+..+..........+......+..+.+..............+.............+..+..................+.......+......+...............+..+.......+.....+...+...+.+...+.....+...+....+...+.................+.........+................+...+++++
+...+...+.+.........+.....+......+...+.+.........+++++++++++++++++++++++++++++++++++++++++++++*......+.+.....+..........+++++++++++++++++++++++++++++++++++++++++++++*....+........+.+.....+..........+...........+...............+...+.+...........+..........+...+..+....+...+..+................+.........+......+++++
+-----
+```
+
+$ ls -l tls.crt tls.key 
+```
+$ ls -l tls.crt tls.key 
+-rw-r--r--@ 1 javedalam  staff  1822 Sep 22 17:30 tls.crt
+-rw-------@ 1 javedalam  staff  3268 Sep 22 17:30 tls.key
+```
+
+# chatgpt 
+```
+The command you've provided is an OpenSSL command used to generate a self-signed X.509 certificate and a corresponding private key for securing a web server using Transport Layer Security (TLS)/Secure Sockets Layer (SSL) encryption. Here's a breakdown of each part of the command:
+
+1. `openssl`: This is the command to invoke OpenSSL, a widely-used open-source tool for working with SSL/TLS protocols and certificates.
+
+2. `req`: This subcommand of OpenSSL is used for generating and manipulating certificate requests and X.509 certificates.
+
+3. `-x509`: This option specifies that you want to create a self-signed X.509 certificate instead of generating a certificate signing request (CSR), which would be used to request a certificate from a certificate authority (CA).
+
+4. `-newkey rsa:4096`: This option tells OpenSSL to generate a new RSA private key with a key length of 4096 bits. RSA is a widely-used asymmetric encryption algorithm used in SSL/TLS.
+
+5. `-sha256`: This option specifies the hash algorithm to be used for the certificate's signature. In this case, SHA-256 is chosen for the security it provides.
+
+6. `-nodes`: This option indicates that you don't want to encrypt the private key with a passphrase. It generates a private key without a passphrase, making it easier to automate certificate management.
+
+7. `-keyout tls.key`: This specifies the filename where the private key will be saved. In this example, it will be saved as `tls.key`.
+
+8. `-out tls.crt`: This specifies the filename where the self-signed certificate will be saved. In this example, it will be saved as `tls.crt`.
+
+9. `-subj "/CN=nginx-demo.com"`: This option provides a subject for the certificate. `/CN=nginx-demo.com` sets the Common Name (CN) attribute of the certificate to "nginx-demo.com." The CN is typically used to specify the domain or host name for which the certificate is intended. In this case, it's specifying that the certificate is for the domain "nginx-demo.com."
+
+10. `-days 365`: This option specifies the validity period of the certificate in days. In this case, the certificate will be valid for 365 days (1 year).
+
+When you run this command, OpenSSL will generate a private key file (`tls.key`) and a self-signed X.509 certificate file (`tls.crt`). These two files can then be used for configuring a web server, such as Nginx or Apache, to enable HTTPS encryption for the specified domain ("nginx-demo.com" in this case).
+
+Please note that self-signed certificates are typically used for development, testing, or internal purposes. In production environments, it's recommended to obtain a certificate from a trusted certificate authority (CA) to ensure security and trustworthiness for users visiting your website.
+```
+
+# Create a secret, "." will be repalced with "-"
+
+$ kubectl create secret tls nginx-demo-com-tls --cert tls.crt --key tls.key 
+```
+$ kubectl create secret tls nginx-demo-com-tls --cert tls.crt --key tls.key 
+secret/nginx-demo-com-tls created
+```
+
+# Add the secret in existing "nginx-ingress.yaml" file
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  tls:
+    - secretName: nginx-demo-com-tls
+      hosts:
+        - nginx-demo.com
+  rules:
+    - host: nginx-demo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 8082
+```
+
+$ kubectl apply -f nginx-ingress.yaml 
+```
+$ kubectl apply -f nginx-ingress.yaml 
+ingress.networking.k8s.io/nginx-ingress configured
+```
+
+# http -> https 
+# Now try access again: https://nginx-demo.com -> nginx web page should be accessible
+
+# Cross check the cert details, expiry date etc...
+
+END
+
+# remove all entries from 
+$ sudo vim /etc/hosts
+
+--------------------------------------------------------------------------------------------------------
+
+# Namespaces
+
+
+
+
+
+
 

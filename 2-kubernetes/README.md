@@ -3338,9 +3338,560 @@ $ sudo vim /etc/hosts
 
 # Namespaces
 
+[Link](https://www.youtube.com/watch?v=S3iro2aLOF0&list=PLrMP04WSdCjrkNYSFvFeiHrfpsSVDFMDR&index=12)
+
+# Default Namespace:
+```
+default: resources when we dont specify ns explicitly
+kube-node-lease: contains lease resources to send heartbeats of node
+kube-public: use for public resources
+kube-system: for objects created by k8s 
+```
+
+$ minikube status
+```
+$ minikube status
+minikube
+type: Control Plane
+host: Stopped
+kubelet: Stopped
+apiserver: Stopped
+kubeconfig: Stopped
+```
+
+$ minikube start
+```
+$ minikube start
+😄  minikube v1.30.1 on Darwin 14.0 (arm64)
+✨  Using the qemu2 driver based on existing profile
+👍  Starting control plane node minikube in cluster minikube
+🔄  Restarting existing qemu2 VM for "minikube" ...
+🎉  minikube 1.32.0 is available! Download it: https://github.com/kubernetes/minikube/releases/tag/v1.32.0
+💡  To disable this notice, run: 'minikube config set WantUpdateNotification false'
+
+🐳  Preparing Kubernetes v1.26.3 on Docker 20.10.23 ...
+🔗  Configuring bridge CNI (Container Networking Interface) ...
+🔎  Verifying ingress addon...
+🔎  Verifying Kubernetes components...
+🌟  Enabled addons: storage-provisioner, ingress, default-storageclass
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                              READY   STATUS    RESTARTS      AGE
+pod/my-web-app-79b94d5979-f4jkr   1/1     Running   1 (75s ago)   45d
+pod/my-web-app-79b94d5979-kh2cs   1/1     Running   1 (75s ago)   45d
+pod/my-web-app-79b94d5979-mvnlc   1/1     Running   1 (75s ago)   45d
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes       ClusterIP   10.96.0.1       <none>        443/TCP   45d
+service/my-web-app-svc   ClusterIP   10.101.28.160   <none>        80/TCP    45d
+
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/my-web-app   3/3     3            3           45d
+
+NAME                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/my-web-app-79b94d5979   3         3         3       45d
+replicaset.apps/my-web-app-fbf59755     0         0         0       45d
+replicaset.apps/my-web-app-fd6c96b48    0         0         0       45d
+```
+
+$ kubectl create namespace nginx
+```
+$ kubectl create namespace nginx
+namespace/nginx created
+```
+
+$ kubectl get ns
+```
+$ kubectl get ns
+NAME              STATUS   AGE
+argocd            Active   44d
+default           Active   45d
+ingress-nginx     Active   45d
+kube-node-lease   Active   45d
+kube-public       Active   45d
+kube-system       Active   45d
+nginx             Active   2s
+```
+
+$ kubectl api-resources | grep namespace 
+```
+$ kubectl api-resources | grep namespace 
+namespaces                        ns                 v1                                     false        Namespace
+```
+
+$ cat nginx-namespace.yaml 
+```
+$ cat nginx-namespace.yaml 
+apiVersion: v1
+kind: namespace
+metadata:
+  name: nginx 
+```
+
+# Will throw an error
+
+$ kubectl apply -f nginx-namespace.yaml 
+```
+m$ kubectl apply -f nginx-namespace.yaml 
+Warning: resource namespaces/nginx is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+error: error when applying patch:
+
+to:
+Resource: "/v1, Resource=namespaces", GroupVersionKind: "/v1, Kind=namespace"
+Name: "nginx", Namespace: ""
+for: "nginx-namespace.yaml": error when patching "nginx-namespace.yaml": creating patch with:
+original:
+
+modified:
+{"apiVersion":"v1","kind":"namespace","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"namespace\",\"metadata\":{\"annotations\":{},\"name\":\"nginx\"}}\n"},"name":"nginx"}}
+
+current:
+{"apiVersion":"v1","kind":"Namespace","metadata":{"creationTimestamp":"2023-11-09T11:15:37Z","labels":{"kubernetes.io/metadata.name":"nginx"},"managedFields":[{"apiVersion":"v1","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:labels":{".":{},"f:kubernetes.io/metadata.name":{}}}},"manager":"kubectl-create","operation":"Update","time":"2023-11-09T11:15:37Z"}],"name":"nginx","resourceVersion":"31743","uid":"a0aaeda7-1e96-4046-8807-da239200f4cb"},"spec":{"finalizers":["kubernetes"]},"status":{"phase":"Active"}}
+
+for:: precondition failed for: map[kind:namespace metadata:map[annotations:map[kubectl.kubernetes.io/last-applied-configuration:{"apiVersion":"v1","kind":"namespace","metadata":{"annotations":{},"name":"nginx"}}
+]]]
+```
+
+$ kubectl get ns | grep nginx
+```
+$ kubectl get ns | grep nginx
+ingress-nginx     Active   45d
+nginx             Active   7m3s
+```
+
+$ kubectl delete ns nginx
+```
+$ kubectl delete ns nginx
+namespace "nginx" deleted
+```
+
+$ kubectl apply -f nginx-namespace.yaml 
+```
+$ kubectl apply -f nginx-namespace.yaml 
+Error from server (BadRequest): error when creating "nginx-namespace.yaml": namespace in version "v1" cannot be handled as a Namespace: no kind "namespace" is registered for version "v1" in scheme "pkg/api/legacyscheme/scheme.go:30"
+```
+
+$ cat nginx-namespace.yaml 
+```
+$ cat nginx-namespace.yaml 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx 
+```
+
+$ kubectl apply -f nginx-namespace.yaml 
+```
+$ kubectl apply -f nginx-namespace.yaml 
+namespace/nginx created
+```
+
+$ kubectl get ns | grep nginx
+```
+$ kubectl get ns | grep nginx
+nginx             Active   113s
+```
+
+$ cp -r nginx-namespace.yaml todo-namespace.yaml
+
+$ cat todo-namespace.yaml 
+```
+$ cat todo-namespace.yaml 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: todo 
+```
+
+$ kubectl apply -f todo-namespace.yaml 
+```
+$ kubectl apply -f todo-namespace.yaml 
+namespace/todo created
+```
+
+$ kubectl get ns | grep todo 
+```
+$ kubectl get ns | grep todo 
+todo              Active   7s
+```
+
+# Till here all the resources were created in default ns 
+
+# Now, we will work on creating the resources on specific ns 
+
+$ cat nginx-deployment.yaml -> update the namespace only 
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-web-app
+  namespace: nginx
+spec:
+  replicas: 3  # Adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: my-web-app
+  template:
+    metadata:
+      labels:
+        app: my-web-app
+    spec:
+      containers:
+      - name: my-web-app
+        image: nginx:latest  # Use a different image if needed
+        ports:
+        - containerPort: 8080
+```
+
+# we should have 2 deployment but we can see only one reason being its' been replaced
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                                   READY   STATUS    RESTARTS      AGE
+pod/my-web-app-79b94d5979-f4jkr        1/1     Running   1 (18h ago)   45d
+pod/my-web-app-79b94d5979-kh2cs        1/1     Running   1 (18h ago)   45d
+pod/my-web-app-79b94d5979-mvnlc        1/1     Running   1 (18h ago)   45d
+pod/nginx-deployment-fdcbb5f99-8zvdx   1/1     Running   0             72s
+pod/nginx-deployment-fdcbb5f99-tcm8c   1/1     Running   0             72s
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes       ClusterIP   10.96.0.1       <none>        443/TCP   45d
+service/my-web-app-svc   ClusterIP   10.101.28.160   <none>        80/TCP    45d
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/my-web-app         3/3     3            3           45d
+deployment.apps/nginx-deployment   2/2     2            2           72s
+
+NAME                                         DESIRED   CURRENT   READY   AGE
+replicaset.apps/my-web-app-79b94d5979        3         3         3       45d
+replicaset.apps/my-web-app-fbf59755          0         0         0       45d
+replicaset.apps/my-web-app-fd6c96b48         0         0         0       45d
+replicaset.apps/nginx-deployment-fdcbb5f99   2         2         2       72s
+```
+
+# Till here we should have 2 ns one is default and another is with specified 
+
+$ kubectl get all -n nginx -> it should list but no idea why its' not reflecting 
+```
+$ kubectl get all -n nginx
+No resources found in nginx namespace.
+```
 
 
+# List all the resources and ns 
 
+# nignx and default ns shoule reflect here 
+
+$ kubectl get all --all-namespaces
+```
+$ kubectl get all --all-namespaces
+NAMESPACE       NAME                                                    READY   STATUS      RESTARTS      AGE
+argocd          pod/argocd-application-controller-0                     1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-applicationset-controller-5877955b59-s2c7x   1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-dex-server-6c87968c75-p2pjn                  1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-notifications-controller-64bb8dcf46-8zwkf    1/1     Running     2 (18h ago)   44d
+argocd          pod/argocd-redis-7d8d46cc7f-bmxpm                       1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-repo-server-665d6b7b59-2xg9r                 1/1     Running     2 (43d ago)   44d
+argocd          pod/argocd-server-5986f74c99-cn9lh                      1/1     Running     2 (43d ago)   44d
+default         pod/my-web-app-79b94d5979-f4jkr                         1/1     Running     1 (18h ago)   45d
+default         pod/my-web-app-79b94d5979-kh2cs                         1/1     Running     1 (18h ago)   45d
+default         pod/my-web-app-79b94d5979-mvnlc                         1/1     Running     1 (18h ago)   45d
+default         pod/nginx-deployment-fdcbb5f99-8zvdx                    1/1     Running     0             7m39s
+default         pod/nginx-deployment-fdcbb5f99-tcm8c                    1/1     Running     0             7m39s
+ingress-nginx   pod/ingress-nginx-admission-create-vpwch                0/1     Completed   0             45d
+ingress-nginx   pod/ingress-nginx-admission-patch-6fvsg                 0/1     Completed   0             45d
+ingress-nginx   pod/ingress-nginx-controller-6cc5ccb977-xns7x           1/1     Running     3 (18h ago)   45d
+kube-system     pod/coredns-787d4945fb-v76zm                            1/1     Running     1 (18h ago)   45d
+kube-system     pod/etcd-minikube                                       1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-apiserver-minikube                             1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-controller-manager-minikube                    1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-proxy-bhgqm                                    1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-scheduler-minikube                             1/1     Running     1 (18h ago)   45d
+kube-system     pod/storage-provisioner                                 1/1     Running     6 (18h ago)   45d
+
+NAMESPACE       NAME                                              TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+argocd          service/argocd-applicationset-controller          ClusterIP      10.104.181.75    <none>        7000/TCP,8080/TCP            44d
+argocd          service/argocd-dex-server                         ClusterIP      10.110.209.44    <none>        5556/TCP,5557/TCP,5558/TCP   44d
+argocd          service/argocd-metrics                            ClusterIP      10.102.166.162   <none>        8082/TCP                     44d
+argocd          service/argocd-notifications-controller-metrics   ClusterIP      10.98.147.178    <none>        9001/TCP                     44d
+argocd          service/argocd-redis                              ClusterIP      10.98.16.240     <none>        6379/TCP                     44d
+argocd          service/argocd-repo-server                        ClusterIP      10.109.162.62    <none>        8081/TCP,8084/TCP            44d
+argocd          service/argocd-server                             LoadBalancer   10.100.210.154   <pending>     80:30283/TCP,443:30768/TCP   44d
+argocd          service/argocd-server-metrics                     ClusterIP      10.104.120.142   <none>        8083/TCP                     44d
+default         service/kubernetes                                ClusterIP      10.96.0.1        <none>        443/TCP                      45d
+default         service/my-web-app-svc                            ClusterIP      10.101.28.160    <none>        80/TCP                       45d
+ingress-nginx   service/ingress-nginx-controller                  NodePort       10.109.212.228   <none>        80:30653/TCP,443:32726/TCP   45d
+ingress-nginx   service/ingress-nginx-controller-admission        ClusterIP      10.110.130.248   <none>        443/TCP                      45d
+kube-system     service/kube-dns                                  ClusterIP      10.96.0.10       <none>        53/UDP,53/TCP,9153/TCP       45d
+
+NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/kube-proxy   1         1         1       1            1           kubernetes.io/os=linux   45d
+
+NAMESPACE       NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+argocd          deployment.apps/argocd-applicationset-controller   1/1     1            1           44d
+argocd          deployment.apps/argocd-dex-server                  1/1     1            1           44d
+argocd          deployment.apps/argocd-notifications-controller    1/1     1            1           44d
+argocd          deployment.apps/argocd-redis                       1/1     1            1           44d
+argocd          deployment.apps/argocd-repo-server                 1/1     1            1           44d
+argocd          deployment.apps/argocd-server                      1/1     1            1           44d
+default         deployment.apps/my-web-app                         3/3     3            3           45d
+default         deployment.apps/nginx-deployment                   2/2     2            2           7m39s
+ingress-nginx   deployment.apps/ingress-nginx-controller           1/1     1            1           45d
+kube-system     deployment.apps/coredns                            1/1     1            1           45d
+
+NAMESPACE       NAME                                                          DESIRED   CURRENT   READY   AGE
+argocd          replicaset.apps/argocd-applicationset-controller-5877955b59   1         1         1       44d
+argocd          replicaset.apps/argocd-dex-server-6c87968c75                  1         1         1       44d
+argocd          replicaset.apps/argocd-notifications-controller-64bb8dcf46    1         1         1       44d
+argocd          replicaset.apps/argocd-redis-7d8d46cc7f                       1         1         1       44d
+argocd          replicaset.apps/argocd-repo-server-665d6b7b59                 1         1         1       44d
+argocd          replicaset.apps/argocd-server-5986f74c99                      1         1         1       44d
+default         replicaset.apps/my-web-app-79b94d5979                         3         3         3       45d
+default         replicaset.apps/my-web-app-fbf59755                           0         0         0       45d
+default         replicaset.apps/my-web-app-fd6c96b48                          0         0         0       45d
+default         replicaset.apps/nginx-deployment-fdcbb5f99                    2         2         2       7m39s
+ingress-nginx   replicaset.apps/ingress-nginx-controller-6cc5ccb977           1         1         1       45d
+kube-system     replicaset.apps/coredns-787d4945fb                            1         1         1       45d
+
+NAMESPACE   NAME                                             READY   AGE
+argocd      statefulset.apps/argocd-application-controller   1/1     44d
+
+NAMESPACE       NAME                                       COMPLETIONS   DURATION   AGE
+ingress-nginx   job.batch/ingress-nginx-admission-create   1/1           9s         45d
+ingress-nginx   job.batch/ingress-nginx-admission-patch    1/1           9s         45d
+```
+
+$ kubectl get all -A
+```
+$ kubectl get all -A
+NAMESPACE       NAME                                                    READY   STATUS      RESTARTS      AGE
+argocd          pod/argocd-application-controller-0                     1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-applicationset-controller-5877955b59-s2c7x   1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-dex-server-6c87968c75-p2pjn                  1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-notifications-controller-64bb8dcf46-8zwkf    1/1     Running     2 (18h ago)   44d
+argocd          pod/argocd-redis-7d8d46cc7f-bmxpm                       1/1     Running     1 (18h ago)   44d
+argocd          pod/argocd-repo-server-665d6b7b59-2xg9r                 1/1     Running     2 (43d ago)   44d
+argocd          pod/argocd-server-5986f74c99-cn9lh                      1/1     Running     2 (43d ago)   44d
+default         pod/my-web-app-79b94d5979-f4jkr                         1/1     Running     1 (18h ago)   45d
+default         pod/my-web-app-79b94d5979-kh2cs                         1/1     Running     1 (18h ago)   45d
+default         pod/my-web-app-79b94d5979-mvnlc                         1/1     Running     1 (18h ago)   45d
+default         pod/nginx-deployment-fdcbb5f99-8zvdx                    1/1     Running     0             11m
+default         pod/nginx-deployment-fdcbb5f99-tcm8c                    1/1     Running     0             11m
+ingress-nginx   pod/ingress-nginx-admission-create-vpwch                0/1     Completed   0             45d
+ingress-nginx   pod/ingress-nginx-admission-patch-6fvsg                 0/1     Completed   0             45d
+ingress-nginx   pod/ingress-nginx-controller-6cc5ccb977-xns7x           1/1     Running     3 (18h ago)   45d
+kube-system     pod/coredns-787d4945fb-v76zm                            1/1     Running     1 (18h ago)   45d
+kube-system     pod/etcd-minikube                                       1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-apiserver-minikube                             1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-controller-manager-minikube                    1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-proxy-bhgqm                                    1/1     Running     1 (18h ago)   45d
+kube-system     pod/kube-scheduler-minikube                             1/1     Running     1 (18h ago)   45d
+kube-system     pod/storage-provisioner                                 1/1     Running     6 (18h ago)   45d
+
+NAMESPACE       NAME                                              TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+argocd          service/argocd-applicationset-controller          ClusterIP      10.104.181.75    <none>        7000/TCP,8080/TCP            44d
+argocd          service/argocd-dex-server                         ClusterIP      10.110.209.44    <none>        5556/TCP,5557/TCP,5558/TCP   44d
+argocd          service/argocd-metrics                            ClusterIP      10.102.166.162   <none>        8082/TCP                     44d
+argocd          service/argocd-notifications-controller-metrics   ClusterIP      10.98.147.178    <none>        9001/TCP                     44d
+argocd          service/argocd-redis                              ClusterIP      10.98.16.240     <none>        6379/TCP                     44d
+argocd          service/argocd-repo-server                        ClusterIP      10.109.162.62    <none>        8081/TCP,8084/TCP            44d
+argocd          service/argocd-server                             LoadBalancer   10.100.210.154   <pending>     80:30283/TCP,443:30768/TCP   44d
+argocd          service/argocd-server-metrics                     ClusterIP      10.104.120.142   <none>        8083/TCP                     44d
+default         service/kubernetes                                ClusterIP      10.96.0.1        <none>        443/TCP                      45d
+default         service/my-web-app-svc                            ClusterIP      10.101.28.160    <none>        80/TCP                       45d
+ingress-nginx   service/ingress-nginx-controller                  NodePort       10.109.212.228   <none>        80:30653/TCP,443:32726/TCP   45d
+ingress-nginx   service/ingress-nginx-controller-admission        ClusterIP      10.110.130.248   <none>        443/TCP                      45d
+kube-system     service/kube-dns                                  ClusterIP      10.96.0.10       <none>        53/UDP,53/TCP,9153/TCP       45d
+
+NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/kube-proxy   1         1         1       1            1           kubernetes.io/os=linux   45d
+
+NAMESPACE       NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+argocd          deployment.apps/argocd-applicationset-controller   1/1     1            1           44d
+argocd          deployment.apps/argocd-dex-server                  1/1     1            1           44d
+argocd          deployment.apps/argocd-notifications-controller    1/1     1            1           44d
+argocd          deployment.apps/argocd-redis                       1/1     1            1           44d
+argocd          deployment.apps/argocd-repo-server                 1/1     1            1           44d
+argocd          deployment.apps/argocd-server                      1/1     1            1           44d
+default         deployment.apps/my-web-app                         3/3     3            3           45d
+default         deployment.apps/nginx-deployment                   2/2     2            2           11m
+ingress-nginx   deployment.apps/ingress-nginx-controller           1/1     1            1           45d
+kube-system     deployment.apps/coredns                            1/1     1            1           45d
+
+NAMESPACE       NAME                                                          DESIRED   CURRENT   READY   AGE
+argocd          replicaset.apps/argocd-applicationset-controller-5877955b59   1         1         1       44d
+argocd          replicaset.apps/argocd-dex-server-6c87968c75                  1         1         1       44d
+argocd          replicaset.apps/argocd-notifications-controller-64bb8dcf46    1         1         1       44d
+argocd          replicaset.apps/argocd-redis-7d8d46cc7f                       1         1         1       44d
+argocd          replicaset.apps/argocd-repo-server-665d6b7b59                 1         1         1       44d
+argocd          replicaset.apps/argocd-server-5986f74c99                      1         1         1       44d
+default         replicaset.apps/my-web-app-79b94d5979                         3         3         3       45d
+default         replicaset.apps/my-web-app-fbf59755                           0         0         0       45d
+default         replicaset.apps/my-web-app-fd6c96b48                          0         0         0       45d
+default         replicaset.apps/nginx-deployment-fdcbb5f99                    2         2         2       11m
+ingress-nginx   replicaset.apps/ingress-nginx-controller-6cc5ccb977           1         1         1       45d
+kube-system     replicaset.apps/coredns-787d4945fb                            1         1         1       45d
+
+NAMESPACE   NAME                                             READY   AGE
+argocd      statefulset.apps/argocd-application-controller   1/1     44d
+
+NAMESPACE       NAME                                       COMPLETIONS   DURATION   AGE
+ingress-nginx   job.batch/ingress-nginx-admission-create   1/1           9s         45d
+ingress-nginx   job.batch/ingress-nginx-admission-patch    1/1           9s         45d
+```
+
+# Change the svc too
+
+$ cat nginx-service.yaml
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: nginx
+spec:
+  type: LoadBalancer
+  selector:      
+    app: nginx
+  ports:
+  - port: 8082
+    targetPort: 80
+    nodePort: 30000
+```
+
+$ kubectl apply -f nginx-service.yaml 
+```
+$ kubectl apply -f nginx-service.yaml 
+service/nginx-service created
+```
+
+$ kubectl get all -n nginx
+```
+$ kubectl get all -n nginx
+NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/nginx-service   LoadBalancer   10.105.114.124   <pending>     8082:30000/TCP   49s
+```
+
+$ kubectl config set-context --current --namespace=nginx
+```
+$ kubectl config set-context --current --namespace=nginx
+Context "minikube" modified.
+```
+
+$ kubectl get all
+```
+$ kubectl get all
+NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/nginx-service   LoadBalancer   10.105.114.124   <pending>     8082:30000/TCP   17m
+```
+
+
+# Change the namespace to todo 
+
+$ cat todo-ui-api.yaml
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  namespace: todo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-api
+  template:
+    metadata:
+      name: todo-api-pod
+      labels:
+        app: todo-api
+    spec:
+      containers:
+        - name: todo-api
+          image: pavanelthepu/todo-api:1.0.2
+          ports:
+            - containerPort: 8082
+          env:
+            - name: "spring.data.mongodb.uri"
+              value: "mongodb+srv://root:321654@cluster0.p9jq2.mongodb.net/todo?retryWrites=true&w=majority"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-api-service
+  namespace: todo
+spec:
+  selector:
+    app: todo-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-ui
+  namespace: todo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-ui
+  template:
+    metadata:
+      name: todo-ui-pod
+      labels:
+        app: todo-ui
+    spec:
+      containers:
+        - name: todo-ui
+          image: pavanelthepu/todo-ui:1.0.2
+          ports:
+            - containerPort: 80
+          env:
+            - name: "REACT_APP_BACKEND_SERVER_URL"
+              value: "http://todo.com/api"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-ui-service
+  namespace: todo
+spec:
+  selector:
+    app: todo-ui
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 80
+```
+
+$ kubectl apply -f todo-ui-api.yaml 
+```
+$ kubectl apply -f todo-ui-api.yaml 
+deployment.apps/todo-api created
+service/todo-api-service created
+deployment.apps/todo-ui created
+service/todo-ui-service created
+```
+
+$ kubectl get all
+$ kubectl exec -it <pod-name> -- sh -> login to one POD 
+/ # curl todo-api-service:8080/api/todos 
+curl: (6) Could not resolve host: todo-api-service 
+/ # curl todo-api-service.todo.svc.cluster.local:8080/api/todos 
+[{"id":"........}]
+/ # curl todo-api-service.todo:8080/api/todos -> DNS name resolution
+[{"id":"........}]
+
+------------------------------------------------------------------------------------------------------------------------
 
 
 

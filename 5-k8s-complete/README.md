@@ -66,7 +66,7 @@ pod "nginx" deleted
 
 # Multi Container PODs:
 
-$ cat nginx-mongoDB.yaml 
+$ cat nginx-mongo.yaml 
 ```
 apiVersion: v1
 kind: Pod

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    name: nginx 
+spec:
+  containers:
+  - name: nginx
+    image: nginx:alpine
+    # resources:
+    #   limits:
+    #     memory: "128Mi"
+    #     cpu: "500m"
+    ports:
+      - containerPort: 7501
+    imagePullPolicy: Always
+  - name: database
+    image: mongo:7.0.5-rc0-jammy
+    # resources:
+    #   limits:
+    #     memory: "128Mi"
+    #     cpu: "500m"
+    ports:
+      - containerPort: 7502
+    imagePullPolicy: Always
+      

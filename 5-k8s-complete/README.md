@@ -86,7 +86,7 @@ spec:
       - containerPort: 7501
     imagePullPolicy: Always
   - name: database
-    image: mongo:7.0.5-rc0-jammy
+    image: mongo:7.0.5-rc0-jammy    # https://hub.docker.com/_/mongo/tags
     # resources:
     #   limits:
     #     memory: "128Mi"

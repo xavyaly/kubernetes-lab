@@ -121,7 +121,105 @@ ErrImagePull
 
 $ cat replicaset.yaml
 ```
+apiVersion: apps/v1 #version of the API to use
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx
+          ports:
+            - containerPort: 80
+```
 
+$ kubectl apply -f replicaset.yaml
+```
+$ kubectl apply -f replicaset.yaml 
+replicaset.apps/nginx-replicaset created
+```
+
+$ kubectl get rs
+```
+$ kubectl get rs
+NAME                         DESIRED   CURRENT   READY   AGE
+my-web-app-79b94d5979        3         3         3       95d
+my-web-app-fbf59755          0         0         0       95d
+my-web-app-fd6c96b48         0         0         0       95d
+nginx-deployment-fdcbb5f99   2         2         2       49d
+nginx-replicaset             2         2         2       7s
+```
+
+$ kubectl get pods
+```
+$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS        AGE
+my-web-app-79b94d5979-f4jkr        1/1     Running   3 (7m51s ago)   95d
+my-web-app-79b94d5979-kh2cs        1/1     Running   3 (7m51s ago)   95d
+my-web-app-79b94d5979-mvnlc        1/1     Running   3 (7m51s ago)   95d
+nginx                              2/2     Running   2 (7m51s ago)   6d
+nginx-deployment-fdcbb5f99-8zvdx   1/1     Running   2 (7m51s ago)   49d
+nginx-deployment-fdcbb5f99-tcm8c   1/1     Running   2 (7m51s ago)   49d
+nginx-replicaset-c8wlc             1/1     Running   0               34s
+nginx-replicaset-pql9j             1/1     Running   0               34s
+```
+
+$ kubectl get deployment
+```
+$ kubectl get deployment
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+my-web-app         3/3     3            3           95d
+nginx-deployment   2/2     2            2           49d
+```
+
+```
+$ kubectl delete pod my-web-app-79b94d5979-f4jkr
+pod "my-web-app-79b94d5979-f4jkr" deleted
+$ kubectl delete pod my-web-app-79b94d5979-kh2cs
+pod "my-web-app-79b94d5979-kh2cs" deleted
+$ kubectl delete pod my-web-app-79b94d5979-mvnlc
+pod "my-web-app-79b94d5979-mvnlc" deleted
+```
+
+$ kubectl get pods
+```
+$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS      AGE
+my-web-app-79b94d5979-2wrn6        1/1     Running   0             107s
+my-web-app-79b94d5979-8pps2        1/1     Running   0             2m3s
+my-web-app-79b94d5979-wh7v2        1/1     Running   0             85s
+```
+
+$ kubectl delete pod my-web-app-79b94d5979-2wrn6
+```
+$ kubectl delete pod my-web-app-79b94d5979-2wrn6
+pod "my-web-app-79b94d5979-2wrn6" deleted
+```
+
+```
+$ kubectl get pods
+NAME                               READY   STATUS              RESTARTS      AGE
+my-web-app-79b94d5979-8pps2        1/1     Running             0             5m6s
+my-web-app-79b94d5979-hzvvm        0/1     ContainerCreating   0             3s
+my-web-app-79b94d5979-wh7v2        1/1     Running             0             4m28s
+```
+
+```
+$ kubectl get pods
+NAME                               READY   STATUS    RESTARTS      AGE
+my-web-app-79b94d5979-8pps2        1/1     Running   0             5m9s
+my-web-app-79b94d5979-hzvvm        1/1     Running   0             6s
+my-web-app-79b94d5979-wh7v2        1/1     Running   0             4m31s
 ```
 
 

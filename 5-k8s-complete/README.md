@@ -39,22 +39,22 @@ OR
 
 $ cat nginx.yaml
 ```
-apiVersion: v1
-kind: Pod
-metadata:
+apiVersion: v1          # version of the API to use
+kind: Pod               # kind of the object while deploying
+metadata:               # information of the object we're deploying
   name: nginx
   labels:
     name: nginx
-spec:
+spec:                   # specification for our object 
   containers:
-  - name: nginx 
-    image: nginx:alpine
+  - name: nginx         # the name of the container within the POD
+    image: nginx:alpine # which container image should be pulled
     resources:
       limits:
         memory: "128Mi"
         cpu: "500m"
     ports:
-      - containerPort: 8080
+      - containerPort: 8080 # the port of the container within the POD
     imagePullPolicy: Always
 
 $ kubectl create -f nginx.yaml 
@@ -116,7 +116,17 @@ ErrImagePull
 
 # ReplicaSet:
 
+% A pod could die for all kinds of reasons such as a node that it was running on had failed, it ran out of resources, 
+% it was stopped for some reason, etc. If the pod dies, it stays dead until someone fixes it which is not ideal, but with containers we should expect them to be short lived anyway, 
 
+$ cat replicaset.yaml
+```
+
+```
+
+
+-------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------
 
 Deployments:
 

@@ -1,0 +1,21 @@
+# Master Worker architecture
+
+Master Node:
+    etcd
+        key-value db used as backlog store for all cluster configuration data
+    kube-controller-manager
+        run k8s controllers
+    kube-scheduler
+        decides which node should be used for each Pod
+    kube-apiserver
+        allows interacting with the control plane
+
+Worker Node:
+    kube proxy
+        maintain n/w rules on nodes
+    kubelet
+        manage containers on node
+    container-runtime
+        run containers on node
+
+

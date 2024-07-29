@@ -8,16 +8,24 @@ https://github.com/xavyaly/blue-green
 
 [Link](https://medium.com/@javedalam1303/install-awscli-2ea38c4873c3)
 
-# For cross check 
+'''
+aws --version
+aws-cli/2.17.18 Python/3.11.9 Linux/6.8.0-1011-aws exe/x86_64.ubuntu.24
+'''
+
+# To configure aws cli and cross check 
+
+$ aws configure 
+AWS Access Key ID [****************5V7G]: 
+AWS Secret Access Key [****************MF1Y]: 
+Default region name [us-west-2]: 
+Default output format [json]: 
 
 '''
 cat ~/.aws/config
 cat ~/.aws/credentials
 
-aws s3 ls 
-2023-07-06 05:09:17 knowledgeadda1
-2023-07-01 08:47:49 learnzone
-2023-08-09 10:38:34 unique-bucket-09082023
+aws s3 ls # List all the existing buckets in AWS Account
 '''
 
 # Install kubectl 
@@ -44,14 +52,6 @@ on linux_amd64
 
 '''
 git clone https://github.com/xavyaly/blue-green.git
-Cloning into 'blue-green'...
-remote: Enumerating objects: 103, done.
-remote: Counting objects: 100% (103/103), done.
-remote: Compressing objects: 100% (69/69), done.
-remote: Total 103 (delta 47), reused 74 (delta 32), pack-reused 0
-Receiving objects: 100% (103/103), 15.66 KiB | 1.96 MiB/s, done.
-Resolving deltas: 100% (47/47), done.
-ubuntu@ip-172-31-21-244:~$ ls blue-green/
 
 cd blue-green/
 ls
@@ -68,21 +68,17 @@ LICENSE.txt  terraform-provider-aws_v5.60.0_x5
 
 $ terraform plan 
 
-'''
 Plan: 20 to add, 0 to change, 0 to destroy.
-'''
 
 $ terraform apply 
 OR
 $ terraform apply --auto-approve 
 
-'''
 Apply complete! Resources: 20 added, 0 changed, 0 destroyed.
-'''
 
 '''
 
-# To cross check the EKS cluster 
+# To cross check the EKS cluster using CLI
 
 '''
 aws eks list-clusters --region ap-south-1
@@ -100,7 +96,14 @@ aws eks --region ap-south-1 update-kubeconfig --name eks_cluster_demo
 Updated context arn:aws:eks:ap-south-1:252473277340:cluster/eks_cluster_demo in /home/ubuntu/.kube/config
 '''
 
-# 
+# If you want to remove the EKS cluster using terraform
+
+'''
+$ terraform destroy --auto-approve
+
+Destroy complete! Resources: 20 destroyed.
+'''
+
 
 
 

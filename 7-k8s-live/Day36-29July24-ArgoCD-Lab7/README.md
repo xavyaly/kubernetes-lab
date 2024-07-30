@@ -309,6 +309,8 @@ welcome to the flask tutorials updated
 
 # Update that image details in our deploy.yml file in our repo and click on sync in app.
 
+# Apply the changes on demo.py 
+
 '''
 cat flask-demo/demo.py 
 from flask import Flask 
@@ -323,7 +325,23 @@ if __name__ == "__main__":
     app.run(host ='0.0.0.0', port = 5001, debug = True)
 '''
 
-# To build a new images from the recent changes
+# Apply the changes on deploy.yaml 
+
+'''
+image: 782782/python-flask:0.1
+'''
+
+# Push the changes to GitHub
+
+'''
+git branch 
+git status
+git add demo.py deploy.yaml
+git commit -m "<msg>"
+git push 
+'''
+
+# Build a new images, tag and push to Docker Hub
 
 '''
 docker build -t 782782/python-flask:0.1 flask-demo/.
@@ -335,4 +353,10 @@ REPOSITORY            TAG         IMAGE ID       CREATED          SIZE
 docker push 782782/python-flask:0.1
 '''
 
-# Re sync suppose to work 
+# Visit argocd UI and click on sync 
+
+# Changes will reflect accordingly
+
+'''
+http://abcab9d6de1cc4b56b4a9b3ba5b55811-230405789.ap-south-1.elb.amazonaws.com:5001
+'''

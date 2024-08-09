@@ -201,3 +201,13 @@ replicaset.apps/deployment-86c7bb4d7   0         0         0       33m
 replicaset.apps/deployment-96db5d779   5         5         5       4m29s
 '''
 
+# Clean the resources
+
+'''
+kubectl delete deployment deployment 
+deployment.apps "deployment" deleted
+
+kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   4h41m
+'''

@@ -5,6 +5,25 @@
 A Kubernetes Deployment provides declarative updates to applications and ensures that the desired state specified in the Deployment YAML is always met. It manages Replica Sets and provides functionalities such as rolling updates, rollbacks, scaling, and more.
 '''
 
+# Pre-Requisites
+
+# Create an EC2 Instance
+
+# Download and start minikube
+'''
+Refer installation repo
+'''
+
+# Install kubectl
+'''
+Refer installation repo
+'''
+
+# Install docker
+'''
+Refer installation repo
+'''
+
 # Example of a Deployment
 
 # Here's an example of a Kubernetes Deployment for an Nginx application:
@@ -210,4 +229,11 @@ deployment.apps "deployment" deleted
 kubectl get all
 NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   4h41m
+'''
+
+'''
+minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
 '''

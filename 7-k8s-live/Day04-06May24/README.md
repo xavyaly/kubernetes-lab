@@ -1,3 +1,4 @@
+'''
 apiVersion: apps/v1 
 kind: Deployment 
 metadata:
@@ -18,6 +19,7 @@ spec:
   selector:
     matchLabels: 
       app: nginx
+'''
 
 '''
 $ kubectl create namespace dev
@@ -26,6 +28,4 @@ namespace/dev created
 $ kubectl get ns dev
 NAME   STATUS   AGE
 dev    Active   85s
-
-
 '''

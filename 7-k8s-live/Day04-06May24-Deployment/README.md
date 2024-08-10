@@ -1,1 +1,0 @@
-[Link](https://codefresh.io/learn/kubernetes-deployment/kubernetes-deployment-examples-create-update-rollback-and-more/)

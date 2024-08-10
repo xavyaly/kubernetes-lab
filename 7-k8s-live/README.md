@@ -139,6 +139,129 @@ Jobs and CronJobs:
     container-runtime
         run containers on node
 
+---
+
+# Kubernetes Components:
+
+In Kubernetes, there are several key components that work together to manage containerized applications. Here are some of the core components along with brief definitions:
+
+1. Node:
+   - Definition: A physical or virtual machine that runs your applications and other Kubernetes components.
+   - Key Components:
+     - Kubelet: An agent that runs on each node and ensures that containers are running in a Pod.
+     - Container Runtime: Software responsible for running containers (e.g., Docker, containerd).
+
+2. Pod:
+   - Definition: The smallest and simplest unit in the Kubernetes object model, representing a single instance of a running process in a cluster.
+   - Key Components:
+     - Containers: Docker containers or other container runtimes that run within the Pod.
+     - PodSpec: Defines how to run the containers within the Pod.
+
+3. Controller:
+   - Definition: A higher-level abstraction that manages the deployment, scaling, and maintenance of multiple instances of Pods.
+   - Examples:
+     - Deployment Controller: Manages the deployment of applications using declarative configurations.
+     - ReplicaSet Controller: Ensures that a specified number of replicas of a Pod are running.
+     - StatefulSet Controller: Manages the deployment and scaling of a set of Pods with unique identities.
+
+4. Service:
+   - Definition: An abstraction that defines a logical set of Pods and a policy by which to access them.
+   - Types:
+     - ClusterIP: Exposes the Service on an internal IP within the cluster.
+     - NodePort: Exposes the Service on a static port on each node's IP.
+     - LoadBalancer: Creates an external load balancer and assigns a fixed, external IP to the Service.
+     - ExternalName: Maps the Service to the contents of the externalName field.
+
+5. Namespace:
+   - Definition: A way to divide cluster resources between multiple users or projects.
+   - Use Cases:
+     - Logical partitioning of resources.
+     - Access control and resource quota enforcement.
+
+6. ConfigMap and Secret:
+   - Definition: ConfigMaps and Secrets are used to store configuration data and sensitive information, respectively.
+   - ConfigMap Use Case: Storing configuration files, command-line arguments, etc.
+   - Secret Use Case: Storing sensitive data like passwords, API keys, and tokens.
+
+7. Volume:
+   - Definition: A directory that is accessible to all containers in a Pod.
+   - Types:
+     - EmptyDir: An initially empty directory shared by all containers in a Pod.
+     - HostPath: Mounts a file or directory from the host node's filesystem.
+     - PersistentVolume: Represents a piece of network storage provisioned by an administrator.
+
+8. Ingress:
+   - Definition: Manages external access to services within a cluster, typically HTTP.
+   - Key Components:
+     - Ingress Controller: A component that manages external access to services based on Ingress rules.
+
+9. Kubernetes API Server:
+   - Definition: Exposes the Kubernetes API, which is used by other components to interact with the cluster.
+   - Key Functions:
+     - Validates and configures data for the api objects.
+     - Serves the Kubernetes API over HTTPS.
+
+These components work together to provide a robust and scalable platform for deploying, managing, and scaling containerized applications in a Kubernetes cluster.
+
+
+# Kubernetes Architecture:
+
+Kubernetes has a distributed architecture designed for managing containerized applications across a cluster of machines. Below is an overview of the key components in the Kubernetes architecture:
+
+1. Control Plane (Master Node):
+   - API Server: Exposes the Kubernetes API, which is used by all other components. It serves as the frontend for the Kubernetes control plane.
+   - etcd: A distributed key-value store used for storing the cluster configuration and the state of the entire cluster.
+   - Controller Manager: Watches the state of the cluster through the API server and makes changes to bring the current state closer to the desired state.
+   - Scheduler: Assigns nodes to newly created Pods based on resource requirements, policies, and other constraints.
+
+2. Nodes (Minion/Worker Nodes):
+   - Kubelet: An agent that runs on each node and is responsible for ensuring that containers are running in a Pod.
+   - Container Runtime: Software responsible for running containers, such as Docker, containerd, or cri-o.
+   - Kube Proxy: Maintains network rules on nodes, allowing communication between Pods and external traffic.
+
+3. Pod:
+   - The basic building block of a Kubernetes application, representing the smallest deployable units that can be created, scheduled, and managed.
+
+4. Service:
+   - An abstraction that defines a logical set of Pods and a policy by which to access them.
+
+5. Volume:
+   - A directory that is accessible to all containers in a Pod, providing a mechanism for persisting data.
+
+6. ConfigMap and Secret:
+   - ConfigMaps store configuration data, and Secrets store sensitive information.
+
+7. Namespace:
+   - A way to divide cluster resources between multiple users or projects.
+
+8. Ingress:
+   - Manages external access to services within a cluster, typically HTTP.
+
+9. Persistent Volumes (PVs) and Persistent Volume Claims (PVCs):
+   - PVs represent physical storage resources, while PVCs are requests for those resources by Pods.
+
+10. StatefulSets:
+    - Manages the deployment and scaling of a set of Pods, with unique identities and stable network identities.
+
+11. DaemonSets:
+    - Ensures that a copy of a Pod is running across a set of nodes in the cluster.
+
+12. ReplicaSets:
+    - Ensures that a specified number of replicas of a Pod are running.
+
+13. Secrets Controller:
+    - Manages the lifecycle of Secrets.
+
+14. Horizontal Pod Autoscaler:
+    - Automatically adjusts the number of Pods in a deployment or replica set based on observed CPU utilization.
+
+15. Security Contexts:
+    - Define privilege and access control settings for Pods.
+
+This architecture allows Kubernetes to manage the deployment, scaling, and operation of application containers across clusters of hosts, providing a consistent and declarative way to deploy and manage applications. The distributed nature of the architecture ensures high availability, scalability, and fault tolerance.
+
+---
+
 # Example: pod.yaml
 
 '''

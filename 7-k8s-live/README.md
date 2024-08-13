@@ -3272,5 +3272,11 @@ kubectl delete -f dep.yaml
 pod "cont" deleted
 '''
 
+'''
+minikube stop
+'''
+
+# Stop the instance
+
 ---
 

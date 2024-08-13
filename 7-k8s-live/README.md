@@ -2792,18 +2792,464 @@ minikube stop
 
 ---
 
+# Services
 
+Types of services:
 
+In Kubernetes, a Service is an abstraction that defines a logical set of Pods and a policy by which to access them. Services enable external traffic to reach your Pods, and they ensure reliable networking between Pods, even if Pods are distributed across different nodes in the cluster.
 
+ Types of Kubernetes Services:
 
+1. ClusterIP (default):
+   - Exposes the service on a cluster-internal IP.
+   - This service type is only accessible within the Kubernetes cluster.
+   - Use Case: Internal communication between microservices.
 
+   Example:
+   ''' 
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-clusterip-service
+   spec:
+     selector:
+       app: my-app
+     ports:
+       - protocol: TCP
+         port: 80
+         targetPort: 8080
+  '''
+   - In this example, the service is exposing port `80` inside the cluster, which forwards traffic to port `8080` on the selected Pods.
 
+2. NodePort:
 
+   - Exposes the service on each Node's IP at a static port.
+   - This makes the service accessible from outside the cluster using `<NodeIP>:<NodePort>`.
+   - Use Case: Accessing the service externally without a load balancer.
 
+   Example:
+   '''
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-nodeport-service
+   spec:
+     type: NodePort
+     selector:
+       app: my-app
+     ports:
+       - protocol: TCP
+         port: 80
+         targetPort: 8080
+         nodePort: 30007
+   '''
+   - Here, the service will be accessible externally at `http://<NodeIP>:30007`.
 
+3. LoadBalancer:
+   - Exposes the service externally using a cloud provider's load balancer.
+   - The load balancer forwards traffic to the NodePort of the service.
+   - Use Case: Production environments where you need a public IP address for accessing the service.
 
+   Example:
+   '''
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-loadbalancer-service
+   spec:
+     type: LoadBalancer
+     selector:
+       app: my-app
+     ports:
+       - protocol: TCP
+         port: 80
+         targetPort: 8080
+   '''
+   - The cloud provider assigns a public IP to the service, making it accessible globally.
 
+4. ExternalName:
+   - Maps the service to the contents of the `externalName` field by returning a CNAME record.
+   - Use Case: Useful for directing traffic to an external DNS name.
 
+   Example:
+   '''
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-externalname-service
+   spec:
+     type: ExternalName
+     externalName: example.com
+   '''
+   - The service `my-externalname-service` will resolve to `example.com`.
 
+ Creating a Service:
 
+Here’s how you create a simple ClusterIP service in Kubernetes:
 
+1. Create a `deployment.yaml` to deploy your application:
+
+   '''
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: my-app
+   spec:
+     replicas: 3
+     selector:
+       matchLabels:
+         app: my-app
+     template:
+       metadata:
+         labels:
+           app: my-app
+       spec:
+         containers:
+         - name: my-app
+           image: nginx
+           ports:
+           - containerPort: 80
+   '''
+
+2. Then create a `service.yaml`:
+
+   '''
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-app-service
+   spec:
+     selector:
+       app: my-app
+     ports:
+       - protocol: TCP
+         port: 80
+         targetPort: 80
+   '''
+
+3. Apply the YAML files:
+
+   '''
+   kubectl apply -f deployment.yaml
+   '''
+
+ Managing Services:
+
+- Get all Services:
+  
+  '''
+  kubectl get services
+  kubectl get all     # list all 
+  '''
+
+- Get detailed information about a Service:
+  
+  '''
+  kubectl describe service <service-name>
+  '''
+
+- Delete a Service:
+  '''
+  kubectl delete service <service-name>
+  '''
+
+Final Notes:
+
+Services are crucial for Kubernetes-based applications, especially in microservices architectures where communication between services needs to be reliable and resilient. By using different types of services, you can control how your application is exposed within the cluster and to the outside world.
+
+# 
+
+# Pre-Requisites
+
+# Create an EC2 Instance
+
+# Download and start minikube
+'''
+Refer installation repo
+'''
+
+# Install kubectl
+'''
+Refer installation repo
+'''
+
+# Install docker
+'''
+Refer installation repo
+'''
+
+# Labs:
+
+mkdir services
+cd services
+
+'''
+cat dep.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cont
+  labels:
+    env: prod
+    department: sre
+spec:
+  containers:
+    - name: cont1
+      image: nginx
+    - name: cont2
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Learning K8s....; sleep 5 ; done"]
+      ports:
+        - containerPort: 80
+'''
+
+'''
+kubectl apply -f dep.yaml 
+pod/cont created
+
+kubectl get all 
+NAME       READY   STATUS    RESTARTS   AGE
+pod/cont   2/2     Running   0          5s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   5d8h
+
+kubectl get pods -o wide 
+NAME   READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+cont   2/2     Running   0          75s   10.244.0.101   minikube   <none>           <none>
+'''
+
+'''
+kubectl exec cont -it cont1 -- /bin/bash  
+Defaulted container "cont1" out of: cont1, cont2
+root@cont:/# 
+root@cont:/# curl 10.244.0.101
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@cont:/# 
+root@cont:/# apt update && apt install curl 
+Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8788 kB]
+Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [13.8 kB]
+Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [169 kB]
+Fetched 9225 kB in 1s (8350 kB/s)                         
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+All packages are up to date.
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+curl is already the newest version (7.88.1-10+deb12u6).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+root@cont:/# 
+
+root@cont:/# curl localhost:80
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@cont:/# 
+'''
+
+'''
+kubectl exec cont -it cont2 -- /bin/bash  
+Defaulted container "cont1" out of: cont1, cont2
+root@cont:/# 
+root@cont:/# curl 10.244.0.101
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@cont:/# 
+'''
+
+# Next
+
+'''
+cat d-pod1.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: d-pod1
+  labels:
+    env: prod
+    department: sre
+spec:
+  containers:
+    - name: cont1
+      image: nginx
+      ports:
+        - containerPort: 80
+'''
+
+'''
+cat d-pod2.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: d-pod2
+  labels:
+    env: prod
+    department: sre
+spec:
+  containers:
+    - name: cont2
+      image: nginx
+      ports:
+        - containerPort: 80
+'''
+
+'''
+kubectl apply -f d-pod1.yaml 
+pod/d-pod1 created
+
+kubectl apply -f d-pod2.yaml 
+pod/d-pod2 created
+
+kubectl get all 
+NAME         READY   STATUS    RESTARTS   AGE
+pod/cont     2/2     Running   0          7m37s
+pod/d-pod1   1/1     Running   0          53s
+pod/d-pod2   1/1     Running   0          6s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   5d8h
+'''
+
+'''
+kubectl get pods -o wide
+NAME     READY   STATUS    RESTARTS   AGE     IP             NODE       NOMINATED NODE   READINESS GATES
+cont     2/2     Running   0          9m21s   10.244.0.101   minikube   <none>           <none>
+d-pod1   1/1     Running   0          2m37s   10.244.0.102   minikube   <none>           <none>
+d-pod2   1/1     Running   0          110s    10.244.0.103   minikube   <none>           <none>
+'''
+
+'''
+kubectl exec d-pod1 -it cont1 -- /bin/bash  
+root@d-pod1:/# 
+root@d-pod1:/# curl 10.244.0.102
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@d-pod1:/# 
+root@d-pod1:/# exit 
+exit
+'''
+
+'''
+kubectl exec d-pod2 -it cont1 -- /bin/bash  
+root@d-pod2:/# 
+root@d-pod2:/# curl 10.244.0.103
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@d-pod2:/# 
+root@d-pod2:/# 
+root@d-pod2:/# exit 
+exit
+'''

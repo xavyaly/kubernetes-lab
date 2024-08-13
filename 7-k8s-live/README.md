@@ -2792,7 +2792,7 @@ minikube stop
 
 ---
 
-# Services
+# Day40-13Aug24: Services-Lab11
 
 Types of services:
 
@@ -2957,7 +2957,7 @@ Final Notes:
 
 Services are crucial for Kubernetes-based applications, especially in microservices architectures where communication between services needs to be reliable and resilient. By using different types of services, you can control how your application is exposed within the cluster and to the outside world.
 
-# 
+# Lab
 
 # Pre-Requisites
 
@@ -2978,10 +2978,15 @@ Refer installation repo
 Refer installation repo
 '''
 
-# Labs:
+# Login to EC2 machine 
+
+'''
+sudo apt update
+'''
 
 mkdir services
 cd services
+
 
 '''
 cat dep.yaml 
@@ -3253,3 +3258,19 @@ root@d-pod2:/#
 root@d-pod2:/# exit 
 exit
 '''
+
+# Clean 
+
+'''
+kubectl delete pods d-pod1
+pod "d-pod1" deleted
+
+kubectl delete pods d-pod2
+pod "d-pod2" deleted
+
+kubectl delete -f dep.yaml 
+pod "cont" deleted
+'''
+
+---
+

@@ -3259,7 +3259,7 @@ root@d-pod2:/# exit
 exit
 '''
 
-# Clean 
+# Clean: [Link](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_delete/)
 
 '''
 kubectl delete pods d-pod1
@@ -3274,6 +3274,9 @@ pod "cont" deleted
 
 '''
 minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
 '''
 
 # Stop the instance

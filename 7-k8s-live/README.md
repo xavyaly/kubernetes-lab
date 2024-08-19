@@ -3283,3 +3283,352 @@ minikube stop
 
 ---
 
+# Day41-19Aug24: Volumes-Lab12
+
+'''
+
+minikube status
+minikube start      # In case stop 
+
+'''
+
+'''
+kubectl get all 
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   11d
+
+kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   11d   v1.30.0
+'''
+
+# emptydir 
+
+'''
+cat empty.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emptydir
+spec:
+  containers:
+  - name: container1
+    image: ubuntu
+    command: ["/bin/bash", "-c", "while true; do echo This is Day13 of 30DaysOfKubernetes; sleep 5 ; done"]
+    volumeMounts:
+      - name: day13
+        mountPath: "/tmp/container1"
+  - name: container2
+    image: centos
+    command: ["/bin/bash", "-c", "while true; do echo Chak de INDIA!; sleep 5 ; done"]
+    volumeMounts:
+      - name: day13
+        mountPath: "/tmp/container2"
+  volumes:
+  - name: day13
+    emptyDir: {}
+'''
+
+'''
+kubectl apply -f empty.yaml 
+pod/emptydir created
+
+kubectl get all 
+NAME           READY   STATUS    RESTARTS   AGE
+pod/emptydir   2/2     Running   0          6s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   11d
+
+
+kubectl exec -it emptydir -c container1 -- /bin/bash
+root@emptydir:/# 
+root@emptydir:/# cd /tmp/container1/
+root@emptydir:/tmp/container1# ls
+root@emptydir:/tmp/container1# cat >> abc.txt
+hello world 
+a new program 
+^C
+root@emptydir:/tmp/container1# 
+root@emptydir:/tmp/container1# exit 
+exit
+command terminated with exit code 130
+
+
+kubectl exec -it emptydir -c container2 -- /bin/bash
+[root@emptydir /]# 
+[root@emptydir /]# cd /tmp/container2/
+[root@emptydir container2]# ls
+abc.txt
+[root@emptydir container2]# cat abc.txt 
+hello world
+a new program 
+[root@emptydir container2]# cat >> cba.txt
+this is the second 
+container
+^C
+[root@emptydir container2]# ls
+abc.txt  cba.txt
+[root@emptydir container2]# exit 
+exit
+
+
+kubectl exec -it emptydir -c container1 -- /bin/bash
+root@emptydir:/# cd /tmp/container1/
+root@emptydir:/tmp/container1# ls
+abc.txt  cba.txt
+root@emptydir:/tmp/container1# exit
+exit
+
+
+kubectl delete pods emptydir
+pod "emptydir" deleted
+----
+
+# hostpath
+
+'''
+cat hostPath.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath
+spec:
+  containers:
+  - name: container1
+    image: ubuntu
+    command: ["/bin/bash", "-c", "while true; do echo This is Day13 of 30DaysOfKubernetes; sleep 5 ; done"]
+    volumeMounts:
+    - mountPath: "/tmp/cont"
+      name: hp-vm
+  volumes:
+  - name: hp-vm
+    hostPath: 
+      path: /tmp/data
+'''
+
+'''
+kubectl apply -f hostPath.yaml 
+pod/hostpath created
+
+
+ls /tmp/data
+ls: cannot access '/tmp/data': No such file or directory
+
+
+kubectl get all 
+NAME           READY   STATUS    RESTARTS   AGE
+pod/hostpath   1/1     Running   0          10s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   11d
+
+
+kubectl exec -it hostpath -c container1 /bin/bash 
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@hostpath:/# 
+root@hostpath:/# cd /tmp/cont/
+root@hostpath:/tmp/cont# ls
+root@hostpath:/tmp/cont# echo "This is the part of container..." >> abc.txt
+root@hostpath:/tmp/cont# ls   
+abc.txt
+root@hostpath:/tmp/cont# cat abc.txt 
+This is the part of container...
+root@hostpath:/tmp/cont# exit 
+exit
+
+
+ls /tmp/data
+ls: cannot access '/tmp/data': No such file or directory
+
+kubectl delete pods hostpath 
+pod "hostpath" deleted
+'''
+
+# PV and PVC 
+
+# Create a volume from the EBS -> 20 GB 
+
+# pv.yaml
+
+'''
+cat pv.yaml 
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: myebsvol
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  awsElasticBlockStore:
+    volumeID: vol-0308a2410419b25bb
+    fsType: ext4
+'''
+
+'''
+kubectl apply -f pv.yaml 
+Warning: spec.persistentVolumeReclaimPolicy: The Recycle reclaim policy is deprecated. Instead, the recommended approach is to use dynamic provisioning.
+persistentvolume/myebsvol created
+
+kubectl get pv
+NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+myebsvol   1Gi        RWO            Recycle          Available                          <unset>                          66s
+'''
+
+# pvc.yaml
+
+'''
+cat pvc.yaml 
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myebsvolclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+'''
+
+'''
+kubectl apply -f pvc.yaml 
+persistentvolumeclaim/myebsvolclaim create
+
+kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                   STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+myebsvol                                   1Gi        RWO            Recycle          Available                                          <unset>                          2m48s
+pvc-bf4057f0-6cb6-4341-872b-605cdb5d9c6d   1Gi        RWO            Delete           Bound       default/myebsvolclaim   standard       <unset>                          5s
+'''
+
+'''
+cat deployment.yaml 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvdeploy
+spec:
+  replicas: 1
+  selector:     
+    matchLabels:
+     app: mypv
+  template:
+    metadata:
+      labels:
+        app: mypv
+    spec:
+      containers:
+      - name: shell
+        image: centos
+        command: ["bin/bash", "-c", "sleep 10000"]
+        volumeMounts:
+        - name: mypd
+          mountPath: "/tmp/persistent"
+      volumes:
+        - name: mypd
+          persistentVolumeClaim:
+            claimName: myebsvolclaim
+'''
+
+'''
+kubectl apply -f deployment.yaml 
+deployment.apps/pvdeploy created
+
+kubectl get all 
+NAME                            READY   STATUS    RESTARTS   AGE
+pod/pvdeploy-8556986f75-zmb8g   1/1     Running   0          5s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   11d
+
+NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/pvdeploy   1/1     1            1           5s
+
+NAME                                  DESIRED   CURRENT   READY   AGE
+replicaset.apps/pvdeploy-8556986f75   1         1         1       5s
+
+
+kubectl get pods -o wide 
+NAME                        READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+pvdeploy-8556986f75-zmb8g   1/1     Running   0          45s   10.244.0.114   minikube   <none>           <none>
+
+
+kubectl get deploy 
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+pvdeploy   1/1     1            1           71s
+
+kubectl exec -it pvdeploy-8556986f75-zmb8g -c shell /bin/bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+[root@pvdeploy-8556986f75-zmb8g /]# 
+[root@pvdeploy-8556986f75-zmb8g /]# cd /tmp/persistent
+[root@pvdeploy-8556986f75-zmb8g persistent]# 
+[root@pvdeploy-8556986f75-zmb8g persistent]# ls
+[root@pvdeploy-8556986f75-zmb8g persistent]# 
+[root@pvdeploy-8556986f75-zmb8g persistent]# 
+[root@pvdeploy-8556986f75-zmb8g persistent]# echo "Data should be persistent" >> abc.txt 
+[root@pvdeploy-8556986f75-zmb8g persistent]# 
+[root@pvdeploy-8556986f75-zmb8g persistent]# cat abc.txt 
+Data should be persistent
+[root@pvdeploy-8556986f75-zmb8g persistent]# 
+[root@pvdeploy-8556986f75-zmb8g persistent]# exit 
+exit
+
+
+kubectl delete pods pvdeploy-8556986f75-zmb8g
+pod "pvdeploy-8556986f75-zmb8g" deleted
+
+kubectl get pods -o wide 
+NAME                        READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+pvdeploy-8556986f75-dn6kr   1/1     Running   0          40s   10.244.0.115   minikube   <none>           <none>
+
+
+kubectl exec -it pvdeploy-8556986f75-dn6kr -c shell /bin/bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+[root@pvdeploy-8556986f75-dn6kr /]# 
+[root@pvdeploy-8556986f75-dn6kr /]# 
+[root@pvdeploy-8556986f75-dn6kr /]# cd /tmp/persistent
+[root@pvdeploy-8556986f75-dn6kr persistent]# ls
+abc.txt
+[root@pvdeploy-8556986f75-dn6kr persistent]# 
+[root@pvdeploy-8556986f75-dn6kr persistent]# cat abc.txt 
+Data should be persistent
+[root@pvdeploy-8556986f75-dn6kr persistent]# 
+[root@pvdeploy-8556986f75-dn6kr persistent]# 
+[root@pvdeploy-8556986f75-dn6kr persistent]# exi t
+bash: exi: command not found
+[root@pvdeploy-8556986f75-dn6kr persistent]# exit
+exit
+command terminated with exit code 127
+'''
+
+# Cleaning
+
+# Remove the pv and pvc 
+
+'''
+kubectl delete pv myebsvol
+persistentvolume "myebsvol" deleted
+
+kubectl delete pv pvc-bf4057f0-6cb6-4341-872b-605cdb5d9c6d
+persistentvolume "pvc-bf4057f0-6cb6-4341-872b-605cdb5d9c6d" deleted
+'''
+
+# Remove the vol from AWS
+
+kubectl delete deployment pvdeploy
+deployment.apps "pvdeploy" deleted
+
+----
+
+# Remove the deployment file 
+
+
+---

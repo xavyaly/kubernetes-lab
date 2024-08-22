@@ -3632,3 +3632,258 @@ deployment.apps "pvdeploy" deleted
 
 
 ---
+
+# Day42-22Aug24: ConfigMap and Secrets-Lab13
+
+# ConfigMaps: Store non-confidential configuration data as key-value pairs. These are often used to externalize your app's configuration, making it easier to manage.
+
+# Example usage: Inject environment variables, configure files, or command-line arguments.
+
+# Secrets: Store sensitive data such as passwords, tokens, or keys in a base64 encoded format.
+
+# Example usage: Securely store and reference secrets for apps needing authentication or API access.
+
+# Both of these features are essential for decoupling configuration from container images, increasing flexibility and security in Kubernetes.
+
+# Creating ConfigMap from literal
+
+# In this snippet, we have created the configMap through "—-from-literal" which means you just need to provide the key value instead of providing the file with key-value pair data.
+
+'''
+kubectl get cm 
+NAME               DATA   AGE
+kube-root-ca.crt   1      14d
+
+kubectl describe cm <cm-name>
+
+kubectl create cm literal-cm --from-literal=Location=India --from-literal=Username=java --from-literal=Password=password@123
+configmap/literal-cm created
+
+kubectl get cm 
+NAME               DATA   AGE
+kube-root-ca.crt   1      14d
+literal-cm         3      3s
+
+kubectl describe cm literal-cm
+Name:         literal-cm
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+Location:
+----
+India
+Password:
+----
+password@123
+Username:
+----
+java
+
+BinaryData
+====
+
+Events:  <none>
+'''
+
+# CM from file
+# In this snippet, We have created one file first.conf which has some data, and created the configMap with the help of that file.
+
+'''
+echo "This is my first configMap file" >> abc.txt
+
+cat abc.txt 
+This is my first configMap file
+
+kubectl create cm cm1 --from-file=abc.txt
+configmap/cm1 created
+
+kubectl get cm cm1
+NAME   DATA   AGE
+cm1    1      5s
+
+kubectl get cm 
+NAME               DATA   AGE
+cm1                1      10s
+kube-root-ca.crt   1      14d
+literal-cm         3      4m23s
+
+kubectl describe cm cm1
+Name:         cm1
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+abc.txt:
+----
+This is my first configMap file
+
+
+BinaryData
+====
+
+Events:  <none>
+'''
+
+# CM from the env file
+# In this snippet, We have created one environment file first.env which has some data in key-value pairs, and created the configMap with the help of the environment file.
+
+'''
+cat file.env 
+
+subject1=maths
+subject2=physics
+subject3=chemistry 
+subject4=biology
+
+
+kubectl create cm cm-env --from-env-file=file.env
+configmap/cm-env created
+
+kubectl get cm cm-env
+NAME     DATA   AGE
+cm-env   4      16s
+
+kubectl describe cm cm-env
+Name:         cm-env
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+subject1:
+----
+maths
+subject2:
+----
+physics
+subject3:
+----
+chemistry 
+subject4:
+----
+biology
+
+BinaryData
+====
+
+Events:  <none>
+'''
+
+# What if you have to create configMap for tons of files?
+# In this snippet, We have created multiple files in a directory with different extensions that have different types of data and created the configMap for the entire directory.
+# At the bottom, you can see the data that we have created for the entire directory.
+
+'''
+mkdir cms
+mv abc.txt file.env first.conf cms/
+cd cms/
+ls -l
+total 12
+-rw-rw-r-- 1 ubuntu ubuntu 32 Aug 22 03:18 abc.txt
+-rw-rw-r-- 1 ubuntu ubuntu 69 Aug 22 03:21 file.env
+-rw-rw-r-- 1 ubuntu ubuntu 32 Aug 22 02:40 first.conf
+'''
+
+'''
+kubectl get cm 
+NAME               DATA   AGE
+cm-env             4      4m5s
+cm1                1      7m31s
+kube-root-ca.crt   1      14d
+literal-cm         3      11m
+
+kubectl delete cm cm-env cm1 literal-cm
+configmap "cm-env" deleted
+configmap "cm1" deleted
+configmap "literal-cm" deleted
+
+kubectl get cm 
+NAME               DATA   AGE
+kube-root-ca.crt   1      14d
+'''
+
+# All files were located in same path that's the reason we use "."
+
+'''
+kubectl create cm cm-dir --from-file=.
+configmap/cm-dir created
+
+kubectl get cm
+NAME               DATA   AGE
+cm-dir             3      5s
+kube-root-ca.crt   1      14d
+
+kubectl describe cm cm-dir
+Name:         cm-dir
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+abc.txt:
+----
+This is my first configMap file
+
+file.env:
+----
+subject1=maths
+subject2=physics
+subject3=chemistry 
+subject4=biology
+
+first.conf:
+----
+This is my first configMap file
+
+
+BinaryData
+====
+
+Events:  <none>
+
+
+ls -l
+total 12
+-rw-rw-r-- 1 ubuntu ubuntu 32 Aug 22 03:18 abc.txt
+-rw-rw-r-- 1 ubuntu ubuntu 69 Aug 22 03:21 file.env
+-rw-rw-r-- 1 ubuntu ubuntu 32 Aug 22 02:40 first.conf
+'''
+
+# CM from the YAML file
+# The imperative way is not very good if you have to repeat the same tasks again and again. Now, we will look at how to create configMap through the YAML file.
+# In this snippet, We have created one file and run the command with — from-file, and in the end, we add -o yaml which generates the YAML file. You can copy that YAML file modify it according to your key-value pairs and apply the file.
+# At the bottom, you can see the data that we have created through the YAML file.
+
+'''
+kubectl get cm 
+NAME               DATA   AGE
+cm-dir             3      5m48s
+kube-root-ca.crt   1      14d
+
+
+cat file.env 
+subject1=maths
+subject2=physics
+subject3=chemistry 
+subject4=biology
+
+
+kubectl create cm cm-yaml --from-file=file.env --dry-run -o yaml
+W0822 03:35:00.619337   22658 helpers.go:703] --dry-run is deprecated and can be replaced with --dry-run=client.
+apiVersion: v1
+data:
+  file.env: "subject1=maths\nsubject2=physics\nsubject3=chemistry \nsubject4=biology\n"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: cm-yaml
+'''
+
+# Pending for ymal 

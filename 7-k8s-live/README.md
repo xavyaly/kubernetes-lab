@@ -3886,4 +3886,205 @@ metadata:
   name: cm-yaml
 '''
 
-# Pending for ymal 
+# Delete the cm 
+
+'''
+kubectl delete cm cm-dir
+configmap "cm-dir" deleted
+'''
+
+# Day43-23Aug24: ConfigMap and Secrets-Lab14
+
+# Delete all prune pods
+
+'''
+kubectl delete pods --all
+pod "testjob-28739706-r6f58" deleted
+pod "testjob-28739707-thmhz" deleted
+pod "testjob-28739708-qr5c5" deleted
+pod "testjob-28739709-8j62p" deleted
+'''
+
+'''
+kubectl delete jobs --all-namespaces --field-selector status.successful=1
+job.batch "testjob" deleted
+job.batch "testjob-28739709" deleted
+job.batch "testjob-28739710" deleted
+job.batch "testjob-28739711" deleted
+'''
+
+# Follow this blog
+
+[Link](https://blog.devops.dev/day14-configmaps-secrets-1abb910aeb53)
+
+---
+
+# Jobs 
+
+# One-time Execution: If you have a task that needs to be executed one time whether it’s succeed or fail then the job will be finished.
+
+'''
+cat job1.yaml 
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: testjob1
+spec:
+  template:
+    metadata:
+      name: testjob1
+    spec: 
+      containers:
+        - image: ubuntu:latest
+          name: container1
+          command: ["bin/bash", "-c", "sudo apt update; sleep 30"]
+      restartPolicy: Never  # The container is not restarted after termination1
+'''
+
+'''
+kubectl apply -f job1.yaml
+job.batch/testjob1 created
+'''
+'''
+kubectl get all
+job.batch/testjob1           Running    0/1           11s        11s
+
+kubectl get jobs
+testjob1           Complete   1/1           34s        51s
+'''
+
+# Delete 
+
+'''
+kubectl delete -f job1.yaml 
+job.batch "testjob1" deleted
+'''
+
+# Parallelism: If you want to run multiple pods at the same time.
+
+# Create and run the pods simultaneously and delete once the work is completed.
+
+'''
+cat job2.yaml 
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: testjob1
+spec:
+  parallelism: 3 # Create 3 pods and run simultaneously
+  activeDeadlineSeconds: 10 # Pods will terminate after 40 secs(10+30(command sleep time))
+  template:
+    metadata:
+      name: testjob1
+    spec: 
+      containers:
+        - image: ubuntu:latest
+          name: container2
+          command: ["bin/bash", "-c", "sudo apt update; sleep 30"]
+      restartPolicy: Never  # The container is not restarted after termination1
+'''
+
+'''
+kubectl apply -f job2.yaml 
+job.batch/testjob1 created
+
+kubectl get all
+NAME                         READY   STATUS                       RESTARTS   AGE
+pod/testjob1-8gt4g           1/1     Terminating                  0          20s
+pod/testjob1-mvg8x           1/1     Terminating                  0          20s
+pod/testjob1-wm4zp           1/1     Terminating                  0          20s
+'''
+
+# Delete
+
+'''
+kubectl delete -f job2.yaml 
+job.batch "testjob1" deleted
+'''
+
+# Scheduling: If you want to schedule a specific number of pods after a specific time.
+
+# Refer this link for schedule the job
+
+[cronjob](https://tecadmin.net/crontab-in-linux-with-20-examples-of-cron-schedule/)
+
+'''
+cat job3.yaml 
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: testjob1
+spec:
+  schedule: "* * * * *" # https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+  jobTemplate:
+    spec: 
+      template:
+        spec:
+          containers:
+            - image: ubuntu:latest
+              name: container3
+              command: ["bin/bash", "-c", "sudo apt update; sleep 30"]
+          restartPolicy: Never # The container is not restarted after termination1
+'''
+
+'''
+kubectl apply -f job3.yaml 
+cronjob.batch/testjob1 created
+'''
+
+'''
+kubectl get all 
+NAME                         READY   STATUS                       RESTARTS   AGE
+pod/firstpod                 0/1     CreateContainerConfigError   0          31m
+pod/testjob-28739742-x4pdk   0/1     Completed                    0          3m27s
+pod/testjob-28739743-zkjwj   0/1     Completed                    0          2m27s
+pod/testjob-28739744-wn6fs   0/1     Completed                    0          87s
+pod/testjob-28739745-cwdl4   1/1     Running                      0          27s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   15d
+
+NAME                     SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/testjob1   * * * * *   <none>     False     0        <none>          4s
+
+NAME                         STATUS     COMPLETIONS   DURATION   AGE
+job.batch/testjob-28739742   Complete   1/1           33s        3m27s
+job.batch/testjob-28739743   Complete   1/1           33s        2m27s
+job.batch/testjob-28739744   Complete   1/1           33s        87s
+job.batch/testjob-28739745   Running    0/1           27s        27s
+'''
+
+# Delete
+
+'''
+kubectl delete pods --all
+
+kubectl delete jobs --all-namespaces --field-selector status.successful=1
+'''
+
+'''
+kubectl get all 
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/testjob-28739748-xrhqc    1/1     Running   0          4s
+pod/testjob1-28739748-8r944   1/1     Running   0          4s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   15d
+
+NAME                     SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/testjob    * * * * *   <none>     False     1        4s              56m
+cronjob.batch/testjob1   * * * * *   <none>     False     1        4s              2m41s
+
+NAME                          STATUS    COMPLETIONS   DURATION   AGE
+job.batch/testjob-28739748    Running   0/1           4s         4s
+job.batch/testjob1-28739748   Running   0/1           4s         4s
+'''
+
+# Pod Lifecycle
+
+[Link](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+
+---

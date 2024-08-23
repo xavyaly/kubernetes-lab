@@ -4083,6 +4083,13 @@ job.batch/testjob-28739748    Running   0/1           4s         4s
 job.batch/testjob1-28739748   Running   0/1           4s         4s
 '''
 
+'''
+minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
+'''
+
 # Pod Lifecycle
 
 [Link](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)

@@ -4095,3 +4095,214 @@ minikube stop
 [Link](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
 
 ---
+
+# Day44-26Aug24: initcontainer-Lab15
+
+'''
+minikube status 
+
+minikube start
+
+kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   18d   v1.30.0
+
+kubectl get all
+'''
+
+'''
+cat init.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: initcontainer
+spec: 
+  initContainers:
+  - name: container1
+    image: ubuntu
+    command: ["bin/bash", "-c", "echo container1....s > /tmp/xchange/testfile; sleep 15"]
+    volumeMounts:
+      - name: xchange
+        mountPath: "/tmp/xchange"
+  containers:
+  - name: container2
+    image: ubuntu
+    command: ["bin/bash", "-c", "while true; do echo `cat /tmp/data/testfile`; sleep 10; done"]
+    volumeMounts:
+      - name: xchange
+        mountPath: /tmp/data
+  volumes:
+  - name: xchange
+    emptyDir: {}
+'''
+
+'''
+kubectl apply -f init.yaml --dry-run=client 
+pod/initcontainer created (dry run)
+
+kubectl apply -f init.yaml 
+pod/initcontainer created
+
+kubectl get pods -o wide
+NAME                      READY   STATUS      RESTARTS   AGE     IP             NODE       NOMINATED NODE   READINESS GATES
+initcontainer             0/1     Init:0/1    0          9s      10.244.0.210   minikube   <none>           <none>
+
+kubectl describe pods initcontainer
+
+kubectl logs -f initcontainer
+Defaulted container "container2" out of: container2, container1 (init)
+container1....s
+container1....s
+
+
+kubectl exec -it initcontainer -c container2 -- cat /tmp/data/testfile
+container1....s
+
+
+kubectl delete pods initcontainer
+pod "initcontainer" deleted
+'''
+
+# For k8s troubleshooting 
+
+'''
+describe
+inspect
+logs 
+'''
+
+---
+
+# Medium Troubleshooting Arcticle:
+
+[Links](https://medium.com/@javedalam1303/kubernetes-issues-and-resolution-95f4f5053e91)
+
+---
+
+# Namespaces
+
+'''
+kubectl get ns
+NAME              STATUS   AGE
+default           Active   18d
+kube-node-lease   Active   18d
+kube-public       Active   18d
+kube-system       Active   18d
+'''
+
+'''
+kubectl get pods -o wide
+'''
+
+'''
+cat ns.yaml 
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tech-mahindra
+  labels:
+    name: tech-mahindra
+'''
+
+'''
+kubectl apply -f ns.yaml 
+namespace/tech-mahindra created
+
+kubectl get ns
+NAME              STATUS   AGE
+default           Active   18d
+kube-node-lease   Active   18d
+kube-public       Active   18d
+kube-system       Active   18d
+tech-mahindra     Active   3s
+
+kubectl get pods -o wide    # default pods were present 
+'''
+
+'''
+cat pod.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ns-demo-pod
+spec:
+  containers:
+  - name: container1
+    image: ubuntu
+    command: ["bin/bash", "-c", "while true; do echo playing with namespaces; sleep 30; done"]
+  restartPolicy: Never
+'''
+
+# Pod creation without any ns
+
+'''
+kubectl apply -f pod.yaml 
+pod/ns-demo-pod created
+
+kubectl get pods -o wide
+NAME                      READY   STATUS      RESTARTS   AGE     IP             NODE       NOMINATED NODE   READINESS GATES
+ns-demo-pod               1/1     Running     0          6s      10.244.0.255   minikube   <none>           <none>
+
+kubectl get pods -n tech-mahindra
+No resources found in tech-mahindra namespace.
+
+kubectl delete pods ns-demo-pod
+pod "ns-demo-pod" deleted
+'''
+
+# Pod creation with any ns
+
+'''
+kubectl apply -f pod.yaml -n tech-mahindra
+pod/ns-demo-pod created
+
+kubectl get pods -n tech-mahindra
+NAME          READY   STATUS    RESTARTS   AGE
+ns-demo-pod   1/1     Running   0          7s
+
+kubectl delete pods ns-demo-pod
+Error from server (NotFound): pods "ns-demo-pod" not found
+
+kubectl delete pods ns-demo-pod -n tech-mahindra
+pod "ns-demo-pod" deleted
+'''
+
+# Note
+# If you want to set your namespace as the default namespace, you can use the command ‘kubectl config set-context $(kubectl config current-context) — namespace <namespace-name>’’ and if you want to see the default namespace use the command ‘kubectl config view | grep namespace’
+
+'''
+kubectl get ns
+NAME              STATUS   AGE
+default           Active   18d
+kube-node-lease   Active   18d
+kube-public       Active   18d
+kube-system       Active   18d
+tech-mahindra     Active   10m
+
+kubectl config set-context $(kubectl config current-context) --namespace tech-mahindra
+Context "minikube" modified.
+
+tail -10 ~/.kube/config 
+    user: minikube
+  name: minikube
+current-context: minikube
+kind: Config
+preferences: {}
+users:
+- name: minikube
+  user:
+    client-certificate: /home/ubuntu/.minikube/profiles/minikube/client.crt
+    client-key: /home/ubuntu/.minikube/profiles/minikube/client.key
+
+
+kubectl config view | grep tech-mahindra
+    namespace: tech-mahindra
+'''
+
+# Resource Quota
+
+
+

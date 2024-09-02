@@ -4302,7 +4302,289 @@ kubectl config view | grep tech-mahindra
     namespace: tech-mahindra
 '''
 
-# Resource Quota
+# Day45-29Aug24: Resource Quota-Lab16
+
+# Theory
+
+
+'''
+minikube status 
+minikube start
+'''
+
+'''
+cat resource.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resources
+spec: 
+  containers:
+  - image: ubuntu
+    name: res-pod
+    command: ["bin/bash", "-c", "while true; do echo resource limits; sleep 30; done"]
+    resources:
+      requests: 
+        memory: "32Mi"
+        cpu: "200m"
+      limits:
+        memory: "64Mi"
+        cpu: "400m"
+'''
+
+'''
+kubectl apply -f resource.yaml 
+pod/resources created
+
+kubectl get pods -o wide
+NAME                      READY   STATUS      RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+resources                 1/1     Running     0          6s      10.244.1.38   minikube   <none>           <none>
+
+kubectl describe pod resources
+...
+...
+Limits:
+      cpu:     400m
+      memory:  64Mi
+    Requests:
+      cpu:        200m
+      memory:     32Mi
+...
+
+'''
+
+-----
+
+# Day46-02Sept24: HELM-Lab17
+
+https://helm.sh/docs/
+
+HELM:
+
+Helm is a package manager for Kubernetes, designed to simplify deployment and management of applications. It provides reusable Helm Charts—collections of Kubernetes resources—making it easier to define, install, and upgrade even the most complex Kubernetes applications.
+
+ Key Concepts:
+- Helm Chart: A package containing Kubernetes resources.
+- Release: An instance of a chart running in a Kubernetes cluster.
+- Repository: A collection of charts.
+
+ Benefits:
+- Version control for deployments.
+- Simplifies application upgrades and rollbacks.
+- Easy sharing of pre-configured Kubernetes resources.
+
+ Installation:
+```bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+——
+
+To install Helm on Ubuntu, follow these steps:
+
+1. Download and install Helm:
+   ```bash
+   curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+   ```
+
+2. Verify the Helm installation:
+   ```bash
+   helm version
+   ```
+
+3. (Optional) Add a Helm chart repository (like the official stable repo):
+   ```bash
+   helm repo add stable https://charts.helm.sh/stable
+   helm repo update
+   ```
+
+Now, you're ready to deploy Helm charts to your Kubernetes cluster.
+
+——
+
+Here are 20 essential Helm commands that are widely used for package management in Kubernetes:
+
+1. helm repo add – Add a new Helm repository:
+   ```bash
+   helm repo add <repo-name> <repo-url>
+   ```
+
+2. helm repo list – List all repositories:
+   ```bash
+   helm repo list
+   ```
+
+3. helm repo update – Refresh repository cache:
+   ```bash
+   helm repo update
+   ```
+
+4. helm search repo – Search charts in repo:
+   ```bash
+   helm search repo <chart-name>
+   ```
+
+5. helm install – Install a chart:
+   ```bash
+   helm install <release-name> <chart-name>
+   ```
+
+6. helm upgrade – Upgrade an existing release:
+   ```bash
+   helm upgrade <release-name> <chart-name>
+   ```
+
+7. helm uninstall – Uninstall a release:
+   ```bash
+   helm uninstall <release-name>
+   ```
+
+8. helm rollback – Roll back to a previous release version:
+   ```bash
+   helm rollback <release-name> <revision-number>
+   ```
+
+9. helm history – View release history:
+   ```bash
+   helm history <release-name>
+   ```
+
+10. helm status – Get the status of a release:
+   ```bash
+   helm status <release-name>
+   ```
+
+11. helm list – List all Helm releases:
+   ```bash
+   helm list
+   ```
+
+12. helm show values – Show the default values of a chart:
+   ```bash
+   helm show values <chart-name>
+   ```
+
+13. helm get values – Retrieve the values of an installed release:
+   ```bash
+   helm get values <release-name>
+   ```
+
+14. helm get manifest – Get the Kubernetes manifest for a release:
+   ```bash
+   helm get manifest <release-name>
+   ```
+
+15. helm template – Render chart templates locally:
+   ```bash
+   helm template <release-name> <chart-name>
+   ```
+
+16. helm create – Scaffold a new chart:
+   ```bash
+   helm create <chart-name>
+   ```
+
+17. helm lint – Check the chart for possible issues:
+   ```bash
+   helm lint <chart-name>
+   ```
+
+18. helm package – Package a Helm chart:
+   ```bash
+   helm package <chart-name>
+   ```
+
+19. helm repo remove – Remove a repository:
+   ```bash
+   helm repo remove <repo-name>
+   ```
+
+20. helm test – Test the installed release:
+   ```bash
+   helm test <release-name>
+   ```
+
+These commands help manage, install, update, and troubleshoot Helm charts in a Kubernetes environment effectively.
+
+———
+
+To create a basic Helm project, follow these steps:
+
+1. Create a Helm Chart:
+   ```bash
+   helm create my-chart
+   ```
+
+2. Modify the Chart: 
+   Edit the `Chart.yaml` file to define chart details such as name, version, and description. Edit `values.yaml` to customize configurations.
+
+3. Package the Chart:
+   Package the Helm chart for distribution.
+   ```bash
+   helm package my-chart
+   ```
+
+4. Install the Chart:
+   Deploy the chart to your Kubernetes cluster.
+   ```bash
+   helm install my-release ./my-chart
+   ```
+
+5. Verify Installation:
+   List Helm deployments:
+   ```bash
+   helm list
+   ```
+
+This is the basic workflow for setting up a Helm project and deploying it.
+
+——-
+
+A Helm chart is a collection of files that describe a related set of Kubernetes resources. It helps define, install, and upgrade even the most complex Kubernetes applications. 
+
+Key components of a Helm chart:
+
+- Chart.yaml: Contains metadata about the chart (name, version, description).
+- values.yaml: A file for default configuration values.
+- templates/: Holds the Kubernetes YAML resource files (deployment, service, etc.), which are parameterized using Go templating.
+- charts/: A directory to hold any dependent charts.
+
+Helm charts help simplify the management of Kubernetes applications by making them modular, versioned, and easily deployable.
+
+———
+
+A real-world example of using Helm charts involves deploying a multi-tier web application on Kubernetes. Suppose you're managing an e-commerce platform that has components like frontend, backend, and a database. Each of these can be deployed as Kubernetes services (like deployments, services, configmaps).
+
+With Helm charts, you can package these components into a single reusable, versioned bundle, allowing you to deploy the entire platform with a single `helm install` command. You can customize configuration through the `values.yaml` file and manage updates/upgrades using Helm.
+
+ Example Use Case:
+1. Frontend: Contains configuration for the UI with Dockerized images deployed as pods.
+2. Backend: API service, deployed with settings for load balancing and replicas.
+3. Database: PostgreSQL, with PVC and PV for persistent storage, and security settings managed through secrets.
+
+Using Helm makes managing this application easier by abstracting complexity, promoting reusability, and ensuring consistency across different environments (staging, production).
+
+
+3 Tier Architecture:
+
+FRONTEND (WEB APPLICATIONS)-> BACKEND (APPLICATION SERVERS) -> DATABASE (POSTGRES)
+
+——
+
+Tutorials:
+
+[OFFICIAL DOCS](https://helm.sh/docs/)
+
+[10 TUTORIALS](https://jfrog.com/blog/10-helm-tutorials-to-start-your-kubernetes-journey/)
+
+https://www.freecodecamp.org/news/what-is-a-helm-chart-tutorial-for-kubernetes-beginners/
+
+[Try this](https://dev.to/syedasadrazadevops/deploying-a-microservices-application-using-helm-on-kubernetes-3h22)
+
+——
+
+
 
 
 

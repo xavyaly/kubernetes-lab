@@ -1,9 +1,7 @@
 # Practice Questions:
 
-# List all the pods 
-
-How many pods exist on the system?
-In the current(default) namespace.
+# How many pods exist on the system?
+# In the current(default) namespace.
 
 controlplane ~ ➜  kubectl get pods
 No resources found in default namespace.
@@ -22,8 +20,6 @@ kubernetes   ClusterIP   10.43.0.1    <none>        443/TCP   2m44s
 ---
 
 # Create a new POD with the nginx image
-
-Create a new pod using the nginx image.
 
 controlplane ~ ➜  kubectl run k8s-pod --image=nginx
 pod/k8s-pod created

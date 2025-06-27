@@ -1,5 +1,7 @@
 Create a new pod with the nginx image.
+
 controlplane ~ ✖ kubectl run nginx --image=nginx
+
 controlplane ~ ➜  kubectl get pods
 NAME    READY   STATUS    RESTARTS   AGE
 nginx   1/1     Running   0          12s
